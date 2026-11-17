@@ -16,7 +16,7 @@ export function startGame(ci: number) {
   G.S = charSave(d.id);
   G.P = newPlayer(d);
   setSpecialIcon(d.special);
-  G.hintT = 9;
+  G.hintT = save.hinted ? 0 : 8; save.hinted = true;
   loadLevel(G.S.level in LEVELS ? G.S.level : 'vila');
   G.scene = 'game';
 }

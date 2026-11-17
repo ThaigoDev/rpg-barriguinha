@@ -16,6 +16,8 @@ import { getArt, drawArtBack, drawArtFront, drawLights } from '../render/art';
 import { drawCharAt, drawDog } from '../render/sprites';
 import { drawHUD, drawBanner, drawDialog, drawMenu, drawDeath, drawVictory } from '../render/ui';
 import { CHARS } from '../data/content';
+import { isTouch } from '../core/input';
+import { HF } from '../render/ui';
 import { NET, netTick, isGuest, online } from '../net/net';
 import { guestSmooth } from './coop';
 
@@ -108,11 +110,10 @@ export function renderWorld() {
   for (const r of NET.remotes.values()) {
     const d = CHARS.find(c => c.id === r.c); if (!d) continue;
     drawCharAt(d, r.x, r.y, r.f || 1, { ...(r.o || {}), seed: 5 }, 1, r.s === 'dead' ? .5 : 1);
-    txt(d.short, Math.round(r.x), Math.round(r.y) - 40, 8, '#9fd8ff', 'center');
-    if (r.mh) { R('#000', r.x - 10, r.y - 31, 20, 2); R('#3aa0e0', r.x - 9.5, r.y - 30.5, 19 * Math.max(0, r.hp) / r.mh, 1); }
+    ctx.globalAlpha = .85; txt(d.short, Math.round(r.x), Math.round(r.y) - 38, HF - 1, '#9fd8ff', 'center'); ctx.globalAlpha = 1;
+    if (r.mh) { R('#000', r.x - 8, r.y - 32, 16, 1.5); R('#3aa0e0', r.x - 8, r.y - 32, 16 * Math.max(0, r.hp) / r.mh, 1); }
   }
   drawCharAt(P.d, P.x, P.y, P.face, playerPose());
-  if (online()) txt(P.d.short, Math.round(P.x), Math.round(P.y) - 40, 8, '#ffe0a0', 'center');
   if (P.critNext && Math.floor(G.time * 8) % 2) R('#ffe080', P.x - .5, P.y - 34, 1, 1);
   drawProjs();
   for (const p of G.parts) {
@@ -122,10 +123,10 @@ export function renderWorld() {
     else R(p.c, x, y, p.s / SC, p.s / SC);
   }
   ctx.globalAlpha = 1;
-  for (const t of G.texts) { ctx.globalAlpha = Math.min(1, t.life * 2); txt(t.s, Math.round(t.x), Math.round(t.y), 8, t.c, 'center'); }
+  for (const t of G.texts) { ctx.globalAlpha = Math.min(1, t.life * 2); txt(t.s, Math.round(t.x), Math.round(t.y), /^\d+$/.test(t.s) ? HF + 1 : HF, t.c, 'center'); }
   ctx.globalAlpha = 1;
   const n = G.near;
-  if (n && G.scene === 'game' && !G.menu && !G.dialog) txt('[E] ' + n.label, Math.round(n.x), GY - 50, 8, '#ffe0a0', 'center');
+  if (n && G.scene === 'game' && !G.menu && !G.dialog) { ctx.globalAlpha = .75 + .25 * Math.sin(G.time * 4); txt((isTouch ? '' : 'E  ') + n.label, Math.round(n.x), GY - 46, HF, '#ffe0a0', 'center'); ctx.globalAlpha = 1; }
   ctx.restore();
   drawArtFront(art, cam, Math.round(sx * SC), Math.round(sy * SC));
   if (!vig) { vig = ctx.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, H * .95); vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,.6)'); }

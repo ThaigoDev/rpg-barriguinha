@@ -23,26 +23,60 @@ export function drawTitleBG() {
   drawArtFront(art, cam);
 }
 
+// Tamanho do texto do HUD (unidades do mundo; 1 = 2px de tela). Menor no PC, um pouco maior no celular.
+export const HF = isTouch ? 6 : 5;
+
+function soulIcon(x: number, y: number) { R('#9fd8ff', x + 1, y, 2, 4); R('#9fd8ff', x, y + 1, 4, 2); R('#ffffff', x + 1.5, y + 1.5, 1, 1); }
+function cupIcon(x: number, y: number, on: boolean) { const c = on ? '#e8e0d0' : '#5a5048'; R(c, x, y + 1, 4, 4); R('#5a3418', x + .5, y + 1, 3, 1); R(c, x + 4, y + 2, 1.5, 2); }
+
+/** HUD minimalista: uma coluna compacta no canto superior esquerdo; o resto só aparece quando importa. */
 export function drawHUD() {
-  const P = G.P, S = G.S, boss = G.boss;
-  txt(P.d.short + '  NV ' + S.lv, 8, 6, 8, '#e8dcc0');
-  bar(8, 17, Math.round(50 + P.maxhp * .7), 5, P.hp, P.maxhp, '#a01822', P.hpLag);
-  bar(8, 25, Math.round(40 + P.maxst * .6), 3, Math.max(0, P.st), P.maxst, P.stFlash > 0 && Math.floor(G.time * 20) % 2 ? '#d0d040' : '#2e8a3a');
-  R('#e8e0d0', 9, 33, 6, 6); R('#5a3418', 10, 33, 4, 1); R('#e8e0d0', 15, 34, 2, 3);
-  txt('x' + P.cafe, 20, 33, 8, P.cafe ? '#e8dcc0' : '#7a6a5a');
-  if (P.buffT > 0) txt('MALDIÇÃO ' + Math.ceil(P.buffT) + 's', 8, 45, 8, '#c080ff');
-  if (P.critNext) txt('PRÓXIMO: CRÍTICO', 8, P.buffT > 0 ? 56 : 45, 8, '#ffe080');
-  R('rgba(0,0,0,.6)', W - 96, 6, 88, 18); R('#5a4a30', W - 96, 23, 88, 1);
-  txt('ALMAS', W - 84, 11, 8, '#7a8a9a'); txt(String(S.souls), W - 14, 11, 8, '#e8dcc0', 'right'); R('#9fd8ff', W - 90, 13, 3, 3);
-  if (boss && G.arenaOn && boss.state !== 'dead') { txt(boss.name, W / 2 - 150, H - 34, 8, '#e8dcc0'); bar(W / 2 - 150, H - 22, 300, 5, boss.hp, boss.maxhp, '#8a1420'); }
+  const P = G.P, S = G.S, boss = G.boss, F = HF;
+  const hpW = Math.round(Math.min(150, 46 + P.maxhp * .55)), stW = Math.round(Math.min(120, 34 + P.maxst * .45));
+  // fundo suave atrás da coluna
+  const g = ctx.createLinearGradient(0, 0, 0, 34); g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, hpW + 30, 34);
+  bar(8, 8, hpW, 3, P.hp, P.maxhp, P.hp < P.maxhp * .25 && Math.floor(G.time * 4) % 2 ? '#d02030' : '#a01822', P.hpLag);
+  bar(8, 13.5, stW, 1.5, Math.max(0, P.st), P.maxst, P.stFlash > 0 && Math.floor(G.time * 20) % 2 ? '#d0d040' : '#3a9a48');
+  // café e almas na mesma linha
+  const y = 19;
+  cupIcon(8, y, P.cafe > 0); txt(String(P.cafe), 15, y + .5, F, P.cafe ? '#e8dcc0' : '#6a5a4a');
+  const sx = 15 + (String(P.cafe).length) * F + 8;
+  soulIcon(sx, y + .5); txt(String(S.souls), sx + 6, y + .5, F, '#cfe6f4');
+  // efeitos ativos
+  let ey = y + F + 4;
+  if (P.buffT > 0) { txt('MALDIÇÃO ' + Math.ceil(P.buffT), 8, ey, F, '#c080ff'); ey += F + 3; }
+  if (P.critNext) txt('CRÍTICO PRONTO', 8, ey, F, '#ffe080');
+  // chefe: barra fina embaixo
+  if (boss && G.arenaOn && boss.state !== 'dead') {
+    const bw = 240, bx = (W - bw) / 2;
+    txt(boss.name, W / 2, H - 22, F, '#d8ccb0', 'center');
+    bar(bx, H - 13, bw, 2.5, boss.hp, boss.maxhp, '#8a1420');
+  }
+  // selo da sala online
   if (online() || NET.status) {
     const n = NET.remotes.size + 1;
-    const label = NET.status || ((NET.role === 'host' ? 'ANFITRIÃO' : 'CONVIDADO') + ' · SALA ' + NET.code + ' · ' + n + (n > 1 ? ' JOGADORES' : ' JOGADOR'));
-    R('rgba(0,0,0,.55)', W / 2 - 110, 6, 220, 13); txt(label, W / 2, 9, 8, '#9fd8ff', 'center');
+    const label = NET.status || ('SALA ' + NET.code + '  ·  ' + n + (n > 1 ? ' jogadores' : ' jogador'));
+    ctx.font = F + 'px "Press Start 2P", monospace';
+    const tw = ctx.measureText(label).width + 14;
+    R('rgba(0,0,0,.5)', W / 2 - tw / 2, 5, tw, F + 5);
+    R(NET.status ? '#d8b060' : (Math.floor(G.time * 1.5) % 2 ? '#4ad08a' : '#2a9a5a'), W / 2 - tw / 2 + 4, 5 + (F + 5) / 2 - 1, 2, 2);
+    txt(label, W / 2 + 3, 7.5, F, '#9fd8ff', 'center');
   }
-  if (G.netMsg) { const a = Math.min(1, G.netMsg.t); ctx.globalAlpha = a; R('rgba(0,0,0,.65)', W / 2 - 150, 22, 300, 14); txt(G.netMsg.text, W / 2, 25, 8, '#ffe0a0', 'center'); ctx.globalAlpha = 1; }
-  if (G.hintT > 0 && !G.arenaOn) { ctx.globalAlpha = Math.min(1, G.hintT); if (isTouch) { txt('ATQ = combo  ·  segure FORTE = carregar  ·  ROLA desvia', W / 2, 62, 8, '#c8b898', 'center'); txt('No ar: ATQ corta, FORTE cai golpeando', W / 2, 74, 8, '#a89878', 'center'); }
-    else { txt('J leve (combo)  K forte (segure)  L especial  SHIFT rola', W / 2, 62, 8, '#c8b898', 'center'); txt('No ar: J corte aéreo, K ataque em queda  ·  Q café  E usa', W / 2, 74, 8, '#a89878', 'center'); } ctx.globalAlpha = 1; }
+  if (G.netMsg) {
+    const a = Math.min(1, G.netMsg.t); ctx.globalAlpha = a;
+    ctx.font = F + 'px "Press Start 2P", monospace';
+    const tw = ctx.measureText(G.netMsg.text).width + 16;
+    R('rgba(0,0,0,.6)', W / 2 - tw / 2, 18, tw, F + 6); txt(G.netMsg.text, W / 2, 21, F, '#ffe0a0', 'center'); ctx.globalAlpha = 1;
+  }
+  // dicas: só no começo, embaixo, uma linha
+  if (G.hintT > 0 && !G.arenaOn) {
+    ctx.globalAlpha = Math.min(1, G.hintT) * .9;
+    const t = isTouch ? 'ATQ combo · segure FORTE · ROLA desvia · no ar: FORTE cai golpeando'
+      : 'J combo · K forte (segure) · L especial · SHIFT rola · Q café · E usar';
+    txt(t, W / 2, H - 22, F, '#c8b898', 'center');
+    ctx.globalAlpha = 1;
+  }
 }
 
 export function drawBanner() {

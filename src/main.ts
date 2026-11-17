@@ -7,7 +7,7 @@ import { G } from './game/state';
 import { save } from './game/save';
 import { startGame, loadLevel } from './game/level';
 import './game/coop';
-import { hostRoom, joinRoom } from './net/net';
+import { hostRoom, joinRoom, NET } from './net/net';
 import { updateMenu } from './game/interact';
 import { drawMenu } from './render/ui';
 import { killEnemy } from './game/combat';
@@ -104,4 +104,4 @@ fontReady.catch(() => {}).finally(() => requestAnimationFrame(frame));
 
 // Atalho de depuração no console do navegador: window.G
 (window as any).G = G;
-(window as any).DBG = { loadLevel, killEnemy };
+(window as any).DBG = { loadLevel, killEnemy, NET };
