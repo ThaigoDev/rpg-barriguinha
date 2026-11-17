@@ -5,7 +5,7 @@ import { hit, pressed, clearPressed, initInput, isTouch, goFullscreen } from './
 import { CHARS } from './data/content';
 import { G } from './game/state';
 import { save } from './game/save';
-import { startGame, loadLevel } from './game/level';
+import { startGame, loadLevel, enterArea } from './game/level';
 import './game/coop';
 import { hostRoom, joinRoom, NET } from './net/net';
 import { updateMenu } from './game/interact';
@@ -51,6 +51,7 @@ addEventListener('resize', resize); resize();
 initInput((gx, gy) => {
   if (G.scene === 'game' && gy < 16 && Math.abs(gx - 240) < 90) { G.netDebug = !G.netDebug; return; }
   if (G.scene === 'title' && isTouch) goFullscreen();
+  if (G.map) { G.map = false; return; }
   if (G.menu) { // tocar numa opção do menu escolhe ela
     const r = (G.menu._rects || []).find((r: any) => gx >= r.x && gx <= r.x + r.w && gy >= r.y && gy <= r.y + r.h);
     if (r) { G.menu.idx = r.i; pressed.Enter = true; }
@@ -106,4 +107,4 @@ fontReady.catch(() => {}).finally(() => requestAnimationFrame(frame));
 
 // Atalho de depuração no console do navegador: window.G
 (window as any).G = G;
-(window as any).DBG = { loadLevel, killEnemy, NET };
+(window as any).DBG = { loadLevel, killEnemy, NET, enterArea };

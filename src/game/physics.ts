@@ -1,27 +1,74 @@
-// Gravidade, chão com buracos e plataformas atravessáveis por baixo.
+// Física do mundo: gravidade, relevo (chão em degraus de alturas diferentes), buracos, plataformas,
+// portões fechados e elevadores.
+//
+// Cada fase descreve o chão como trechos [x0, x1, y] (o topo do chão entre x0 e x1 está na altura y).
+// Onde não há trecho é buraco. Fases antigas sem "ground" ganham chão plano na altura GY menos os buracos.
 import { GY } from '../core/canvas';
-import { clamp } from '../core/math';
 import { G } from './state';
 
 export const GRAV = 900;
+const STEP = 6.5; // degrau que dá pra subir andando
 
-export function gapAt(x: number) { for (const g of G.L.gaps) if (x > g[0] && x < g[1]) return g; return null; }
-export const solidAt = (x: number) => !gapAt(x);
+/** Prepara os dados derivados de uma fase (uma vez). */
+export function prepLevel(L: any) {
+  if (L._prep) return L;
+  L._prep = true;
+  L.height = L.height || 270;
+  if (!L.ground) {
+    const gaps = (L.gaps || []).slice().sort((a: number[], b: number[]) => a[0] - b[0]);
+    const seg: number[][] = []; let x = -100;
+    for (const g of gaps) { seg.push([x, g[0], GY]); x = g[1]; }
+    seg.push([x, L.width + 100, GY]);
+    L.ground = seg;
+  }
+  L._ground = L.ground.map((s: number[]) => [s[0], s[1], s[2]]).sort((a: number[], b: number[]) => a[0] - b[0]);
+  L.npcs = L.npcs || (L.npc ? [L.npc] : []);
+  for (const k of ['links', 'doors', 'gates', 'lifts', 'water', 'plats', 'gaps', 'msgs', 'items', 'fires', 'spawns']) L[k] = L[k] || [];
+  const gyL = (x: number) => groundAtL(L, x) ?? GY;
+  for (const o of [...L.fires, ...L.msgs, ...L.npcs, ...L.doors]) if (o.y == null) o.y = gyL(o.x);
+  if (L.exit && L.exit.y == null) L.exit.y = gyL(L.exit.x);
+  for (const g of L.gates) { if (g.y == null) g.y = gyL(g.x); if (g.top == null) g.top = g.y - 40; }
+  for (const it of L.items) if (it.y == null) it.y = gyL(it.x);
+  return L;
+}
+
+export function groundAtL(L: any, x: number): number | null {
+  for (const s of L._ground) if (x >= s[0] && x < s[1]) return s[2];
+  return null;
+}
+export const groundAt = (x: number) => groundAtL(G.L, x);
+/** Altura do chão em x (ou o fundo da fase, se for buraco). */
+export const gy = (x: number) => groundAt(x) ?? (G.L.height + 60);
+export const solidAt = (x: number) => groundAt(x) != null;
+
+function gateBlocks(ox: number, nx: number, y: number) {
+  for (const g of G.L.gates) {
+    if (G.S?.opened?.[G.L.id + ':' + g.id]) continue;
+    if ((ox < g.x) !== (nx < g.x) && y > g.top) return true;
+  }
+  return false;
+}
 
 export function physics(e: any, dt: number, bounds?: number[]) {
-  e.vy += GRAV * dt; if (e.vy > 520) e.vy = 520;
+  const wasG = e.onGround;
+  if (!e.fly) { e.vy += GRAV * dt; if (e.vy > 520) e.vy = 520; }
   const oy = e.y, ox = e.x;
-  e.x += e.vx * dt; e.y += e.vy * dt;
-  e.onGround = false; e.plat = null;
-  // dentro de um buraco: as paredes do buraco seguram
-  if (oy > GY + .5 && e.y > GY + .5 && solidAt(e.x)) {
-    let g = gapAt(ox);
-    if (!g) { let best = 1e9; for (const gg of G.L.gaps) { const d = Math.min(Math.abs(gg[0] - e.x), Math.abs(gg[1] - e.x)); if (d < best) { best = d; g = gg; } } }
-    if (g) e.x = clamp(e.x, g[0] + 1, g[1] - 1);
+  // horizontal: paredes do relevo e portões
+  e.x += e.vx * dt;
+  const g = groundAt(e.x);
+  if (g != null && e.y > g + .5) {
+    if (wasG && e.y - g <= STEP) e.y = g; // sobe o degrau
+    else e.x = ox;
   }
-  if (e.y >= GY && oy <= GY + .5 && solidAt(e.x)) { e.y = GY; e.vy = 0; e.onGround = true; }
-  else if (e.vy >= 0 && !(e.dropT > 0)) {
-    for (const p of G.L.plats) {
+  if (gateBlocks(ox, e.x, e.y)) e.x = ox;
+  { const gc = groundAt(e.x); if (gc != null && e.y > gc + .5 && oy > gc + .5) { e.y = gc; e.vy = 0; } } // preso dentro do terreno (teleporte): sobe
+  // vertical
+  e.y += e.vy * dt; e.onGround = false; e.plat = null;
+  const g2 = groundAt(e.x);
+  if (g2 != null && e.y >= g2 && oy <= g2 + .5) { e.y = g2; e.vy = 0; e.onGround = true; }
+  else if (g2 != null && wasG && e.vy >= 0 && g2 > e.y && g2 - e.y <= STEP && !(e.dropT > 0) && !(e.plat0)) { e.y = g2; e.vy = 0; e.onGround = true; } // desce degrau sem pular
+  if (!e.onGround && e.vy >= 0 && !(e.dropT > 0)) {
+    for (const p of G.L.plats.concat(G.lifts || [])) {
       if (e.x > p.x - 2 && e.x < p.x + p.w + 2 && oy <= p.y + .5 && e.y >= p.y) { e.y = p.y; e.vy = 0; e.onGround = true; e.plat = p; break; }
     }
   }
@@ -29,12 +76,13 @@ export function physics(e: any, dt: number, bounds?: number[]) {
   if (e.x < lo) e.x = lo; if (e.x > hi) e.x = hi;
 }
 
-/** Inimigos não andam para dentro de buracos nem caem da plataforma. */
+/** Inimigos não andam para dentro de buracos, nem caem de degraus altos ou plataformas. */
 export function edgeAhead(e: any, dir: number) {
   if (!e.onGround || !dir) return false;
   const nx = e.x + dir * 8;
   if (e.plat) return nx < e.plat.x || nx > e.plat.x + e.plat.w;
-  return !solidAt(nx);
+  const g = groundAt(nx);
+  return g == null || Math.abs(g - e.y) > STEP || gateBlocks(e.x, nx, e.y);
 }
 
 export const ov = (a: any, b: any) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;

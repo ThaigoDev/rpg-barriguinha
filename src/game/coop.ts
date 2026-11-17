@@ -1,5 +1,4 @@
 // Liga a rede (net/net.ts) ao jogo: o que acontece quando chegam mensagens.
-import { GY } from '../core/canvas';
 import { SFX } from '../core/audio';
 import { BOSSES } from '../data/content';
 import { NET } from '../net/net';
@@ -9,7 +8,7 @@ import { playerPose } from './player';
 import { hurtPlayer, remoteHit } from './combat';
 import { mkEnemy } from './enemies';
 import { mkBoss } from './boss';
-import { loadLevel, rebuildWorld } from './level';
+import { loadLevel, rebuildWorld, enterArea } from './level';
 
 NET.hooks = {
   pose: () => { const o = playerPose(); delete o.seed; return o; },
@@ -18,7 +17,10 @@ NET.hooks = {
     const e = typeof eid === 'number' ? G.enemies.find((x: any) => x.id === eid) : G.boss;
     if (e && e.state !== 'dead') { e.state = 'stun'; e.t = 0; e.vx = 0; e.hitDone = true; }
   },
-  gotoLevel: (id: string) => { if (G.L?.id !== id || G.scene === 'select') { loadLevel(id, 0); if (G.scene !== 'dead') G.scene = 'game'; } },
+  gotoLevel: (id: string, x?: number, y?: number) => {
+    if (G.L?.id !== id || G.scene === 'select') { if (x != null && G.L) enterArea(id, x - 16, y); else loadLevel(id, 0); if (G.scene !== 'dead') G.scene = 'game'; }
+    else if (x != null) NET.hooks.joinHost(x, y);
+  },
   remoteHurt: (m: any) => {
     if (G.scene !== 'game' || !G.P) return;
     hurtPlayer(m.dmg, { x: m.sx, id: m.eid, proxy: true });
@@ -79,5 +81,5 @@ export function guestSmooth(dt: number) {
   }
   const b = G.boss;
   if (b) { if (b.tx != null) { b.x += (b.tx - b.x) * k; b.y += (b.ty - b.y) * k; } b.t += dt; b.flash = Math.max(0, b.flash - dt); }
-  if (G.boss?.state === 'dead' && Math.random() < .5) part({ x: G.boss.x, y: GY - Math.random() * G.boss.h, vx: 0, vy: -40, life: 1, c: '#9fd8ff', g: -10 });
+  if (G.boss?.state === 'dead' && Math.random() < .5) part({ x: G.boss.x, y: G.boss.y - Math.random() * G.boss.h, vx: 0, vy: -40, life: 1, c: '#9fd8ff', g: -10 });
 }

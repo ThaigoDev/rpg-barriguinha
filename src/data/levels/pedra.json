@@ -1,0 +1,201 @@
+{
+ "id": "pedra",
+ "name": "PASTO DOS MARIBONDOS",
+ "short": "Pedra Alta",
+ "chapter": "Capítulo 3 · Serra da Cerrinha · onde fomos picados",
+ "theme": "serra",
+ "width": 2400,
+ "height": 400,
+ "map": [
+  5,
+  1
+ ],
+ "art": {
+  "rock": [
+   [
+    880,
+    1490
+   ]
+  ],
+  "fence": [
+   [
+    100,
+    780
+   ],
+   [
+    1600,
+    2300
+   ]
+  ],
+  "mountain": {
+   "x": 1400,
+   "h": 230
+  },
+  "trail": true
+ },
+ "ground": [
+  [
+   -100,
+   880,
+   360
+  ],
+  [
+   880,
+   940,
+   330
+  ],
+  [
+   940,
+   1000,
+   298
+  ],
+  [
+   1000,
+   1060,
+   266
+  ],
+  [
+   1060,
+   1130,
+   236
+  ],
+  [
+   1130,
+   1250,
+   206
+  ],
+  [
+   1250,
+   1310,
+   240
+  ],
+  [
+   1310,
+   1370,
+   274
+  ],
+  [
+   1370,
+   1430,
+   306
+  ],
+  [
+   1430,
+   1490,
+   336
+  ],
+  [
+   1490,
+   2500,
+   360
+  ]
+ ],
+ "spawns": [
+  [
+   "maribondo",
+   700
+  ],
+  [
+   "maribondo",
+   760
+  ],
+  [
+   "ninho",
+   1195,
+   206
+  ],
+  [
+   "maribondo",
+   1080
+  ],
+  [
+   "maribondo",
+   1320
+  ],
+  [
+   "boi",
+   1820
+  ],
+  [
+   "peao",
+   2100
+  ],
+  [
+   "maribondo",
+   2200
+  ],
+  [
+   "maribondo",
+   2240
+  ]
+ ],
+ "fires": [
+  {
+   "x": 200,
+   "name": "FOGUEIRA DO TIO"
+  },
+  {
+   "x": 1700,
+   "name": "FOGUEIRA DO PASTO"
+  }
+ ],
+ "npcs": [
+  {
+   "x": 830,
+   "look": "tio",
+   "name": "O TIO",
+   "face": 1,
+   "intro": [
+    "Ô, sobrinho! Chegou na hora. Tá vendo aquela pedra alta ali? Tem história.",
+    "Dizem que, antes da corrupção, um cavaleiro escondeu o tesouro dele lá em cima. Ninguém nunca achou.",
+    "Ninguém achou porque os maribondos não deixam. Igual naquele dia... cês lembram, né? Ninguém esquece.",
+    "Se for subir, sobe rápido e rola muito. E não adianta gritar 'tio', que eu não vou buscar."
+   ],
+   "more": [
+    "Já contei da vez que eu vi uma onça aqui? Era um gato. Mas era grande.",
+    "Essa pedra já foi mais alta. Ou eu que era mais baixo.",
+    "Picada de maribondo passa com café. Tudo passa com café.",
+    "Se perderam na trilha da mata de novo? Segue as fitas vermelhas, gente.",
+    "Lá no topo tem churrasqueira. Se derrubar o guardião, a carne é por minha conta."
+   ]
+  }
+ ],
+ "msgs": [
+  {
+   "x": 1180,
+   "y": 206,
+   "text": "O tesouro do cavaleiro: um frasco de café e umas almas. E um monte de maribondo bravo."
+  },
+  {
+   "x": 1560,
+   "text": "Picada de maribondo: aplique café. Repita até passar."
+  }
+ ],
+ "items": [
+  {
+   "id": "cafe",
+   "x": 1150,
+   "y": 206,
+   "type": "cafe"
+  },
+  {
+   "id": "s1",
+   "x": 1230,
+   "y": 206,
+   "type": "souls",
+   "v": 400
+  }
+ ],
+ "links": [
+  {
+   "side": "left",
+   "to": "arvore",
+   "toX": 1370
+  },
+  {
+   "side": "right",
+   "to": "topo",
+   "toX": 24
+  }
+ ]
+}

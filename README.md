@@ -46,12 +46,23 @@ reinicia na fogueira como no modo solo; se ele sair, os convidados continuam soz
 
 ## Conteúdo
 
-| Capítulo | Fase | Inimigos | Chefe |
-|---|---|---|---|
-| 1 | Vila dos Esquecidos | Morto-vivo, Cavaleiro Oco, Caramelo Amaldiçoado | O Guardião Sem Rosto |
-| 2 | Floresta de Neversk (buracos!) | Lobo Sombrio (anda em bando), Arqueiro Esquecido, Lenhador Oco | Alefloki, o Caçador |
+| Região | Áreas | Destaques |
+|---|---|---|
+| Vila dos Esquecidos | Vila | Guardião Sem Rosto |
+| Floresta de Neversk | Floresta (buracos) | Lobos em bando, arqueiros, Alefloki o Caçador |
+| Serra da Cerrinha | Pasto, Trilha da Mata, Árvore dos Seis, Pasto dos Maribondos, Topo da Cerrinha, Represa do Granada | Lugares reais do grupo em Matipó, no fim de tarde; Guardião das Torres |
 
-Fogueiras servem para descansar, subir de nível e **viajar** entre fases já liberadas. O progresso fica salvo no navegador, separado por personagem.
+### Mundo interligado (etapa 4)
+
+- **Relevo de verdade:** o chão tem degraus e alturas diferentes (`ground: [[x0, x1, y], ...]`) e a câmera sobe e desce.
+- **Áreas ligadas:** andar até a borda leva para a área vizinha (`links`, podem depender da altura). Portas levam para outras áreas (`doors`).
+- **Atalhos:** portas trancadas que só abrem pelo outro lado (`lock`/`opens`), portões (`gates`) e elevadores (`lifts`).
+- **Trilha da Mata:** pelo caminho de baixo você anda em círculos; pelas fitas vermelhas, lá em cima, chega na Árvore dos Seis.
+- **Água funda** na Represa (`water`): cair é morte.
+- **Mapa do mundo** (pausa ou fogueira) com as áreas visitadas e as ligações.
+- Ao morrer, você volta para a última fogueira em que descansou, mesmo que seja em outra área. Dá pra viajar entre fogueiras acesas.
+
+Fogueiras servem para descansar, subir de nível, viajar e ver o mapa. O progresso fica salvo no navegador, separado por personagem.
 
 ## Desenvolvimento
 
@@ -90,4 +101,4 @@ src/
 - **Nova fala, piada ou mensagem no chão:** edite o JSON da fase (`npc.intro`, `npc.more`, `msgs`).
 - **Novo inimigo:** adicione em `enemies.json` com `kind` = `melee`, `lunger` ou `ranged`, e um `look`.
 - **Novo chefe:** adicione em `bosses.json` combinando golpes dos tipos `melee`, `leap`, `dash`, `throw`, `hop` e `rain`, e as regras em `ai` (distância mínima e máxima, peso, fase).
-- **Nova fase:** crie `levels/<id>.json`, registre em `data/content.ts` e aponte o `exit.to` da fase anterior.
+- **Nova área:** crie `levels/<id>.json` (tema, `ground`, `plats`, `spawns`, `fires`, `links`, `doors`...), registre em `data/content.ts` (LEVELS e REGIONS) e ligue com as vizinhas por `links` ou `doors`. Temas de cenário: `vila`, `floresta`, `trilha`, `serra`, `arvore`, `topo`, `represa`.

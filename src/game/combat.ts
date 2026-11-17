@@ -57,7 +57,8 @@ export function applyDamage(e: any, dmg: number, heavy: boolean, fromX: number) 
   if (e.isBoss) {
     e.poise += dmg * (heavy ? 1.5 : 1);
     if (e.poise >= e.B.poise && e.state !== 'atk') { e.poise = 0; e.state = 'stun'; e.t = 0; addText(e.x, e.y - e.h - 14, 'ATORDOADO', '#ffd84a'); }
-  } else if (!e.armored || heavy) { e.state = 'hurt'; e.t = 0; e.vx = Math.sign(e.x - fromX) * (heavy ? 130 : 70); }
+  } else if ((!e.armored || heavy) && !(e.stagger === 'heavy' && !heavy) && e.kind !== 'nest' && !(e.kind === 'charger' && e.state === 'atk')) { e.state = 'hurt'; e.t = 0; e.vx = Math.sign(e.x - fromX) * (heavy ? 130 : 70); }
+  else if (e.kind === 'nest') e.flash = .12;
   if (e.hp <= 0) killEnemy(e);
 }
 
@@ -107,7 +108,7 @@ export function die(fell: boolean) {
   // as almas antigas de outra fase também se perdem
   for (const k in S.levels) if (S.levels[k] !== LS) S.levels[k].stain = null;
   S.souls = 0; store();
-  G.scene = 'dead'; G.deathT = 0; G.deathMsg = pick(fell ? TEXTS.fall : TEXTS.death); G.menu = null; G.dialog = null;
+  G.scene = 'dead'; G.deathT = 0; G.deathMsg = pick(G.drowned ? TEXTS.water : fell ? TEXTS.fall : TEXTS.death); G.menu = null; G.dialog = null;
 }
 
 void NET;

@@ -133,7 +133,7 @@ export function drawTitle() {
   ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(0, 0, W, H);
   txt('A LENDA', W / 2, 40, 24, '#e8dcc0', 'center'); txt('DOS SEIS', W / 2, 72, 24, '#e8dcc0', 'center');
   txt('um soulslike de Neversk', W / 2, 106, 8, '#b8a888', 'center');
-  txt('Capítulo 1: Vila dos Esquecidos  ·  Capítulo 2: Floresta', W / 2, 120, 8, '#8a7a5a', 'center');
+  txt('Vila dos Esquecidos  ·  Floresta de Neversk  ·  Serra da Cerrinha', W / 2, 120, 8, '#8a7a5a', 'center');
   if (Math.floor(G.time * 2) % 2) txt(isTouch ? 'Toque para começar' : 'Aperte ENTER', W / 2, 150, 8, '#ffe0a0', 'center');
 }
 

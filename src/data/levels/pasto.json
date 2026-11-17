@@ -1,0 +1,164 @@
+{
+ "id": "pasto",
+ "name": "PASTO ATRÁS DA CERRINHA",
+ "short": "Pasto",
+ "chapter": "Capítulo 3 · Serra da Cerrinha",
+ "theme": "serra",
+ "width": 2600,
+ "height": 300,
+ "map": [
+  2,
+  1
+ ],
+ "art": {
+  "mountain": {
+   "x": 1600,
+   "h": 200
+  },
+  "fence": [
+   [
+    200,
+    900
+   ],
+   [
+    1500,
+    2100
+   ]
+  ],
+  "trail": true
+ },
+ "ground": [
+  [
+   -100,
+   500,
+   262
+  ],
+  [
+   500,
+   640,
+   256
+  ],
+  [
+   640,
+   780,
+   250
+  ],
+  [
+   780,
+   1100,
+   244
+  ],
+  [
+   1100,
+   1240,
+   250
+  ],
+  [
+   1240,
+   1380,
+   256
+  ],
+  [
+   1380,
+   1700,
+   262
+  ],
+  [
+   1700,
+   1840,
+   256
+  ],
+  [
+   1840,
+   2700,
+   250
+  ]
+ ],
+ "plats": [
+  {
+   "x": 1150,
+   "y": 214,
+   "w": 60
+  },
+  {
+   "x": 1240,
+   "y": 186,
+   "w": 56
+  }
+ ],
+ "spawns": [
+  [
+   "peao",
+   620
+  ],
+  [
+   "peao",
+   980
+  ],
+  [
+   "boi",
+   1520
+  ],
+  [
+   "maribondo",
+   2000
+  ],
+  [
+   "maribondo",
+   2040
+  ],
+  [
+   "peao",
+   2330
+  ]
+ ],
+ "fires": [
+  {
+   "x": 120,
+   "name": "FOGUEIRA DA PORTEIRA"
+  }
+ ],
+ "msgs": [
+  {
+   "x": 300,
+   "text": "Bem-vindo à Serra da Cerrinha. Não mexa com o boi. Nem com os maribondos. Nem com nada, na real."
+  },
+  {
+   "x": 1420,
+   "text": "Boi bravo à frente. Quando ele bufar, rola pro lado."
+  },
+  {
+   "x": 2160,
+   "text": "Lá embaixo fica a represa do Granada. Lugar bom pra brincar. Ou pra se afogar."
+  }
+ ],
+ "items": [
+  {
+   "id": "s1",
+   "x": 1268,
+   "y": 186,
+   "type": "souls",
+   "v": 250
+  }
+ ],
+ "links": [
+  {
+   "side": "left",
+   "to": "floresta",
+   "toX": 4560
+  },
+  {
+   "side": "right",
+   "to": "trilha",
+   "toX": 24
+  }
+ ],
+ "doors": [
+  {
+   "x": 2230,
+   "to": "represa",
+   "toX": 90,
+   "label": "Descer para a Represa"
+  }
+ ]
+}

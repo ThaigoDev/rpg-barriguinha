@@ -1,65 +1,242 @@
 {
-  "id": "floresta",
-  "name": "FLORESTA DE NEVERSK",
-  "chapter": "Capítulo 2",
-  "theme": "floresta",
-  "width": 4660,
-  "gaps": [[420, 458], [900, 1010], [2150, 2190], [3000, 3042], [3700, 3744]],
-  "plats": [
-    { "x": 937, "y": 206, "w": 36 },
-    { "x": 1150, "y": 198, "w": 60 }, { "x": 1230, "y": 170, "w": 70 },
-    { "x": 2500, "y": 200, "w": 50 }, { "x": 2570, "y": 172, "w": 50 }, { "x": 2640, "y": 144, "w": 64 },
-    { "x": 3260, "y": 196, "w": 72 }
+ "id": "floresta",
+ "name": "FLORESTA DE NEVERSK",
+ "chapter": "Capítulo 2",
+ "theme": "floresta",
+ "width": 4660,
+ "gaps": [
+  [
+   420,
+   458
   ],
-  "spawns": [
-    ["lumber", 580], ["wolf", 720], ["wolf", 760],
-    ["archer", 1265, 170], ["lumber", 1420], ["archer", 1620], ["wolf", 1760],
-    ["wolf", 2300], ["wolf", 2340], ["wolf", 2380],
-    ["archer", 2780], ["lumber", 2900], ["knight", 3150], ["archer", 3296, 196],
-    ["wolf", 3480], ["lumber", 3600]
+  [
+   900,
+   1010
   ],
-  "fires": [
-    { "x": 100, "name": "FOGUEIRA DA TRILHA" },
-    { "x": 2000, "name": "FOGUEIRA DO CARVALHO" },
-    { "x": 3900, "name": "FOGUEIRA DA CLAREIRA" }
+  [
+   2150,
+   2190
   ],
-  "msgs": [
-    { "x": 250, "text": "Buraco adiante. Pule. Ou não, e aprenda." },
-    { "x": 640, "text": "Lobos em bando. Recue e lute um de cada vez." },
-    { "x": 1100, "text": "Flechas de longe. Role pra FRENTE, não pra trás." },
-    { "x": 2230, "text": "Uivo ouvido. Uivo respondido. Corre." },
-    { "x": 2470, "text": "Café lá em cima. O cheiro não mente." },
-    { "x": 3980, "text": "Ele sempre some na hora da conta. Hoje não." }
+  [
+   3000,
+   3042
   ],
-  "items": [
-    { "id": "s1", "x": 955, "y": 206, "type": "souls", "v": 200 },
-    { "id": "s2", "x": 1265, "y": 170, "type": "souls", "v": 250 },
-    { "id": "cafe", "x": 2672, "y": 144, "type": "cafe" },
-    { "id": "s3", "x": 3296, "y": 196, "type": "souls", "v": 300 }
-  ],
-  "npc": {
-    "x": 165, "look": "donaCida", "name": "DONA CIDA, A COLETORA",
-    "intro": [
-      "Ih, mais um dos Seis. Cuidado onde pisa: a floresta tem buraco e eu não sou a prefeitura.",
-      "O Alefloki tá lá no fundo da floresta. Virou caçador. Caça tudo, menos emprego.",
-      "Os arqueiros atiram de longe. Chega perto que eles correm. Igual o Alefloki quando chega a conta.",
-      "Conselho de quem já viu muito forasteiro cair: rola através das flechas, não pra trás."
-    ],
-    "more": [
-      "Esses cogumelos brilham no escuro. Não come. Não lambe. Não pergunta.",
-      "Lobo em bando é igual grupo de zap: um começa, todo mundo vem.",
-      "Se cair no buraco, não adianta gritar. Eu já tentei.",
-      "Dá pra viajar entre fogueiras, sabia? Senta numa e escolhe 'Viajar'.",
-      "O Velho Zé ainda tá naquela vila? Manda ele me devolver a panela."
-    ]
+  [
+   3700,
+   3744
+  ]
+ ],
+ "plats": [
+  {
+   "x": 937,
+   "y": 206,
+   "w": 36
   },
-  "arena": [4060, 4620],
-  "boss": "alefloki",
-  "bossX": 4450,
-  "exit": { "x": 4590, "label": "Catacumbas Perdidas (em breve)", "to": null },
-  "outro": {
-    "title": "FIM DO CAPÍTULO 2",
-    "text": "Alefloki caiu de joelhos e a névoa vermelha saiu dos olhos dele. 'Pô, foi mal aí. Eu tava possuído. E com fome.'\n\nEle aponta para o leste: nas Catacumbas Perdidas, alguém lê um grimório que não devia. Josias...",
-    "next": "PRÓXIMO: CATACUMBAS PERDIDAS"
+  {
+   "x": 1150,
+   "y": 198,
+   "w": 60
+  },
+  {
+   "x": 1230,
+   "y": 170,
+   "w": 70
+  },
+  {
+   "x": 2500,
+   "y": 200,
+   "w": 50
+  },
+  {
+   "x": 2570,
+   "y": 172,
+   "w": 50
+  },
+  {
+   "x": 2640,
+   "y": 144,
+   "w": 64
+  },
+  {
+   "x": 3260,
+   "y": 196,
+   "w": 72
   }
+ ],
+ "spawns": [
+  [
+   "lumber",
+   580
+  ],
+  [
+   "wolf",
+   720
+  ],
+  [
+   "wolf",
+   760
+  ],
+  [
+   "archer",
+   1265,
+   170
+  ],
+  [
+   "lumber",
+   1420
+  ],
+  [
+   "archer",
+   1620
+  ],
+  [
+   "wolf",
+   1760
+  ],
+  [
+   "wolf",
+   2300
+  ],
+  [
+   "wolf",
+   2340
+  ],
+  [
+   "wolf",
+   2380
+  ],
+  [
+   "archer",
+   2780
+  ],
+  [
+   "lumber",
+   2900
+  ],
+  [
+   "knight",
+   3150
+  ],
+  [
+   "archer",
+   3296,
+   196
+  ],
+  [
+   "wolf",
+   3480
+  ],
+  [
+   "lumber",
+   3600
+  ]
+ ],
+ "fires": [
+  {
+   "x": 100,
+   "name": "FOGUEIRA DA TRILHA"
+  },
+  {
+   "x": 2000,
+   "name": "FOGUEIRA DO CARVALHO"
+  },
+  {
+   "x": 3900,
+   "name": "FOGUEIRA DA CLAREIRA"
+  }
+ ],
+ "msgs": [
+  {
+   "x": 250,
+   "text": "Buraco adiante. Pule. Ou não, e aprenda."
+  },
+  {
+   "x": 640,
+   "text": "Lobos em bando. Recue e lute um de cada vez."
+  },
+  {
+   "x": 1100,
+   "text": "Flechas de longe. Role pra FRENTE, não pra trás."
+  },
+  {
+   "x": 2230,
+   "text": "Uivo ouvido. Uivo respondido. Corre."
+  },
+  {
+   "x": 2470,
+   "text": "Café lá em cima. O cheiro não mente."
+  },
+  {
+   "x": 3980,
+   "text": "Ele sempre some na hora da conta. Hoje não."
+  }
+ ],
+ "items": [
+  {
+   "id": "s1",
+   "x": 955,
+   "y": 206,
+   "type": "souls",
+   "v": 200
+  },
+  {
+   "id": "s2",
+   "x": 1265,
+   "y": 170,
+   "type": "souls",
+   "v": 250
+  },
+  {
+   "id": "cafe",
+   "x": 2672,
+   "y": 144,
+   "type": "cafe"
+  },
+  {
+   "id": "s3",
+   "x": 3296,
+   "y": 196,
+   "type": "souls",
+   "v": 300
+  }
+ ],
+ "npc": {
+  "x": 165,
+  "look": "donaCida",
+  "name": "DONA CIDA, A COLETORA",
+  "intro": [
+   "Ih, mais um dos Seis. Cuidado onde pisa: a floresta tem buraco e eu não sou a prefeitura.",
+   "O Alefloki tá lá no fundo da floresta. Virou caçador. Caça tudo, menos emprego.",
+   "Os arqueiros atiram de longe. Chega perto que eles correm. Igual o Alefloki quando chega a conta.",
+   "Conselho de quem já viu muito forasteiro cair: rola através das flechas, não pra trás."
+  ],
+  "more": [
+   "Esses cogumelos brilham no escuro. Não come. Não lambe. Não pergunta.",
+   "Lobo em bando é igual grupo de zap: um começa, todo mundo vem.",
+   "Se cair no buraco, não adianta gritar. Eu já tentei.",
+   "Dá pra viajar entre fogueiras, sabia? Senta numa e escolhe 'Viajar'.",
+   "O Velho Zé ainda tá naquela vila? Manda ele me devolver a panela."
+  ]
+ },
+ "arena": [
+  4060,
+  4620
+ ],
+ "boss": "alefloki",
+ "bossX": 4450,
+ "exit": {
+  "x": 4590,
+  "label": "Seguir para a Serra da Cerrinha",
+  "to": "pasto"
+ },
+ "outro": {
+  "title": "FIM DO CAPÍTULO 2",
+  "text": "Alefloki caiu de joelhos e a névoa vermelha saiu dos olhos dele. 'Pô, foi mal aí. Eu tava possuído. E com fome.'\n\nEle aponta para o leste, para um morro com torres de ferro piscando no topo: a Serra da Cerrinha. 'Lembra? A gente subia lá. Algo acordou nas torres.'",
+  "next": "PRÓXIMO: SERRA DA CERRINHA"
+ },
+ "short": "Floresta",
+ "map": [
+  1,
+  1
+ ]
 }

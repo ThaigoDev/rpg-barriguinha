@@ -1,0 +1,174 @@
+{
+ "id": "represa",
+ "name": "REPRESA DO GRANADA",
+ "short": "Represa",
+ "chapter": "Capítulo 3 · Serra da Cerrinha · onde a gente brincava",
+ "theme": "represa",
+ "width": 2300,
+ "height": 300,
+ "map": [
+  2,
+  2
+ ],
+ "art": {
+  "lake": true
+ },
+ "ground": [
+  [
+   -100,
+   700,
+   250
+  ],
+  [
+   1500,
+   1720,
+   250
+  ],
+  [
+   1900,
+   2400,
+   250
+  ]
+ ],
+ "water": [
+  {
+   "x0": 700,
+   "x1": 1500,
+   "y": 256
+  },
+  {
+   "x0": 1720,
+   "x1": 1900,
+   "y": 256
+  }
+ ],
+ "plats": [
+  {
+   "x": 740,
+   "y": 240,
+   "w": 90,
+   "pier": true
+  },
+  {
+   "x": 870,
+   "y": 240,
+   "w": 80,
+   "pier": true
+  },
+  {
+   "x": 990,
+   "y": 236,
+   "w": 70,
+   "pier": true
+  },
+  {
+   "x": 1100,
+   "y": 240,
+   "w": 80,
+   "pier": true
+  },
+  {
+   "x": 1220,
+   "y": 236,
+   "w": 90,
+   "pier": true
+  },
+  {
+   "x": 1350,
+   "y": 240,
+   "w": 80,
+   "pier": true
+  },
+  {
+   "x": 1462,
+   "y": 242,
+   "w": 36,
+   "pier": true
+  },
+  {
+   "x": 1755,
+   "y": 240,
+   "w": 80,
+   "pier": true
+  },
+  {
+   "x": 1862,
+   "y": 242,
+   "w": 36,
+   "pier": true
+  }
+ ],
+ "spawns": [
+  [
+   "maribondo",
+   1600
+  ],
+  [
+   "maribondo",
+   1640
+  ],
+  [
+   "peao",
+   2050
+  ],
+  [
+   "boi",
+   2180
+  ]
+ ],
+ "fires": [
+  {
+   "x": 160,
+   "name": "FOGUEIRA DA REPRESA"
+  }
+ ],
+ "npcs": [
+  {
+   "x": 560,
+   "look": "pescador",
+   "name": "O PESCADOR",
+   "face": 1,
+   "intro": [
+    "Peixe aqui? Tem. Já vi um. Em 2009.",
+    "A represa do Granada guarda segredo. Lá na ilhota, ó. Dá pra chegar pulando pelos píeres.",
+    "Mas cuidado: quem cai na água funda não volta. E ainda molha o celular."
+   ],
+   "more": [
+    "Quer saber o que pesquei hoje? Nada. Mas a vista é boa.",
+    "Vocês vinham aqui brincar, né? Lembro da gritaria.",
+    "O boi do outro lado também não sabe nadar. Fica a dica."
+   ]
+  }
+ ],
+ "msgs": [
+  {
+   "x": 660,
+   "text": "A gente veio aqui uma vez pra brincar. Ninguém trouxe toalha."
+  },
+  {
+   "x": 1580,
+   "text": "Ilhota do tesouro. Quem achou, achou."
+  }
+ ],
+ "items": [
+  {
+   "id": "s1",
+   "x": 1600,
+   "type": "souls",
+   "v": 600
+  },
+  {
+   "id": "cafe",
+   "x": 1660,
+   "type": "cafe"
+  }
+ ],
+ "doors": [
+  {
+   "x": 60,
+   "to": "pasto",
+   "toX": 2230,
+   "label": "Subir para o Pasto"
+  }
+ ]
+}

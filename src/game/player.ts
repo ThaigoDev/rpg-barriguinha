@@ -258,7 +258,7 @@ export function updatePlayer(dt: number) {
   p.landT = Math.max(0, (p.landT || 0) - dt); p.interactT = Math.max(0, (p.interactT || 0) - dt); p.blockHitT = Math.max(0, (p.blockHitT || 0) - dt);
   p.wasGround = p.onGround;
   if (p.onGround) { p.safeX = p.x; p.safeY = p.y; }
-  if (p.y > H + 30) die(true);
+  if (p.y > G.L.height + 30) die(true);
 }
 
 export function playerPose() {

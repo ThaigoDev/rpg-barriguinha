@@ -1,17 +1,22 @@
 {
-  "death": [
-    "Faltou o pulo do gato.",
-    "Tomou um couro.",
-    "A culpa foi do lag. Com certeza.",
-    "Respira. É só um jogo... difícil.",
-    "Até o caramelo tá rindo de você.",
-    "Ninguém viu. Só todo mundo.",
-    "Era só ter rolado.",
-    "Volta pra fogueira e pensa no que fez."
-  ],
-  "fall": [
-    "O buraco venceu.",
-    "Gravidade: 1, você: 0.",
-    "Pelo menos foi rápido."
-  ]
+ "death": [
+  "Faltou o pulo do gato.",
+  "Tomou um couro.",
+  "A culpa foi do lag. Com certeza.",
+  "Respira. É só um jogo... difícil.",
+  "Até o caramelo tá rindo de você.",
+  "Ninguém viu. Só todo mundo.",
+  "Era só ter rolado.",
+  "Volta pra fogueira e pensa no que fez."
+ ],
+ "water": [
+  "Esqueceu que não sabe nadar.",
+  "A represa levou mais um.",
+  "Molhou até a alma."
+ ],
+ "fall": [
+  "O buraco venceu.",
+  "Gravidade: 1, você: 0.",
+  "Pelo menos foi rápido."
+ ]
 }

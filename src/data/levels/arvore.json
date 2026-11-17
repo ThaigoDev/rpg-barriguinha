@@ -1,0 +1,151 @@
+{
+ "id": "arvore",
+ "name": "A ÁRVORE DOS SEIS",
+ "short": "Árvore",
+ "chapter": "Capítulo 3 · Serra da Cerrinha · onde a gente subia",
+ "theme": "arvore",
+ "width": 1400,
+ "height": 420,
+ "map": [
+  4,
+  1
+ ],
+ "art": {
+  "tree": {
+   "x": 700,
+   "top": 100
+  },
+  "mountain": {
+   "x": 900,
+   "h": 210
+  }
+ },
+ "ground": [
+  [
+   -100,
+   1500,
+   380
+  ]
+ ],
+ "plats": [
+  {
+   "x": 600,
+   "y": 340,
+   "w": 80,
+   "branch": true
+  },
+  {
+   "x": 710,
+   "y": 306,
+   "w": 96,
+   "branch": true
+  },
+  {
+   "x": 590,
+   "y": 272,
+   "w": 84,
+   "branch": true
+  },
+  {
+   "x": 716,
+   "y": 238,
+   "w": 90,
+   "branch": true
+  },
+  {
+   "x": 596,
+   "y": 204,
+   "w": 84,
+   "branch": true
+  },
+  {
+   "x": 712,
+   "y": 170,
+   "w": 96,
+   "branch": true
+  },
+  {
+   "x": 640,
+   "y": 136,
+   "w": 178,
+   "branch": true
+  }
+ ],
+ "lifts": [
+  {
+   "id": "cesto",
+   "x": 820,
+   "w": 28,
+   "yTop": 136,
+   "yBot": 380,
+   "start": "top"
+  }
+ ],
+ "spawns": [
+  [
+   "maribondo",
+   450
+  ],
+  [
+   "maribondo",
+   980
+  ],
+  [
+   "peao",
+   1100
+  ]
+ ],
+ "fires": [
+  {
+   "x": 300,
+   "name": "FOGUEIRA DA ÁRVORE"
+  }
+ ],
+ "msgs": [
+  {
+   "x": 520,
+   "text": "Aqui a gente subia. Alguém sempre ficava com medo de descer."
+  },
+  {
+   "x": 690,
+   "y": 136,
+   "text": "Riscado no galho: 'OS SEIS ESTIVERAM AQUI'. Embaixo, menor: 'o Davi caiu'."
+  },
+  {
+   "x": 860,
+   "text": "Um cesto de corda lá no alto. Quem subir pode descer com ele, e aí ele fica aqui embaixo."
+  }
+ ],
+ "items": [
+  {
+   "id": "topo",
+   "x": 760,
+   "y": 136,
+   "type": "souls",
+   "v": 500
+  }
+ ],
+ "links": [
+  {
+   "side": "left",
+   "to": "trilha",
+   "toX": 2580,
+   "toY": 198
+  },
+  {
+   "side": "right",
+   "to": "pedra",
+   "toX": 24
+  }
+ ],
+ "doors": [
+  {
+   "x": 1330,
+   "to": "topo",
+   "toX": 190,
+   "label": "Trilha de subida (atalho)",
+   "lock": "atalho_topo",
+   "lockedText": "Um portão de arame farpado. Do outro lado, uma trilha que sobe direto pro topo da Cerrinha. Não abre por aqui."
+  }
+ ]
+}

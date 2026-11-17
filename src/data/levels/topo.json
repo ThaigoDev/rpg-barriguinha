@@ -1,0 +1,102 @@
+{
+ "id": "topo",
+ "name": "TOPO DA CERRINHA",
+ "short": "Topo",
+ "chapter": "Capítulo 3 · Serra da Cerrinha · as torres de Matipó",
+ "theme": "topo",
+ "width": 1900,
+ "height": 300,
+ "map": [
+  6,
+  0
+ ],
+ "art": {
+  "vista": true,
+  "towers": [
+   1150,
+   1500
+  ]
+ },
+ "ground": [
+  [
+   -100,
+   400,
+   260
+  ],
+  [
+   400,
+   520,
+   250
+  ],
+  [
+   520,
+   640,
+   240
+  ],
+  [
+   640,
+   2000,
+   230
+  ]
+ ],
+ "spawns": [
+  [
+   "peao",
+   600
+  ],
+  [
+   "maribondo",
+   760
+  ]
+ ],
+ "fires": [
+  {
+   "x": 300,
+   "name": "CHURRASQUEIRA DO TOPO",
+   "grill": true
+  }
+ ],
+ "msgs": [
+  {
+   "x": 560,
+   "text": "A vista mais bonita de Matipó. Pena o guardião elétrico."
+  },
+  {
+   "x": 860,
+   "text": "As torres zumbem. Dá pra sentir na nuca. Não encoste em nada de metal."
+  }
+ ],
+ "doors": [
+  {
+   "x": 150,
+   "to": "arvore",
+   "toX": 1300,
+   "label": "Trilha de descida (atalho)",
+   "opens": "atalho_topo",
+   "openText": "O portão de arame abre. Agora dá pra descer direto pra Árvore dos Seis."
+  }
+ ],
+ "links": [
+  {
+   "side": "left",
+   "to": "pedra",
+   "toX": 2370
+  }
+ ],
+ "arena": [
+  920,
+  1880
+ ],
+ "boss": "torres",
+ "bossX": 1500,
+ "exit": {
+  "x": 1840,
+  "label": "Catacumbas Perdidas (em breve)",
+  "to": null
+ },
+ "outro": {
+  "title": "FIM DO CAPÍTULO 3",
+  "text": "O Guardião das Torres desaba e as luzes vermelhas param de piscar. Pela primeira vez em muito tempo, dá pra ouvir o vento lá em cima da Cerrinha.\n\nA churrasqueira ainda tá acesa. Lá embaixo, Matipó. Mais longe, as Catacumbas, onde alguém lê um grimório que não devia. Josias...",
+  "next": "PRÓXIMO: CATACUMBAS PERDIDAS"
+ }
+}

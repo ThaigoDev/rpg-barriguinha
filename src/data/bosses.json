@@ -1,45 +1,346 @@
 {
-  "guardiao": {
-    "name": "O GUARDIÃO SEM ROSTO",
-    "look": {
-      "skin": "#e8e2d4", "skinS": "#bdb6a6", "hair": "#2a2830", "hs": "mask", "beard": "none",
-      "outfit": "#3a3540", "outfitD": "#221f28", "pants": "#2c2832", "boots": "#16141a", "cape": "#4a1420", "trim": "#a08a5a", "weapon": "hammer", "armor": true
-    },
-    "scale": 2.3, "hp": 750, "w": 30, "h": 56, "souls": 1500, "walk": 42, "p2speed": 1.3, "poise": 150,
-    "phase2": ["O GUARDIÃO FICOU BRAVO", "(tipo sua mãe com a louça)"],
-    "moves": {
-      "sweep": { "type": "melee", "wind": 0.62, "a0": 0, "a1": 0.22, "dur": 0.3, "box": [0, -48, 64, 48], "dmg": 24, "lunge": 60, "rec": 0.6, "combo": [0, 0.45] },
-      "slam":  { "type": "melee", "wind": 0.85, "a0": 0, "a1": 0.15, "dur": 0.25, "box": [4, -60, 52, 60], "dmg": 34, "rec": 0.85, "impact": true, "shockP2": 1 },
-      "leap":  { "type": "leap",  "wind": 0.5, "vy": -330, "radius": 52, "dmg": 28, "rec": 0.8, "shockP2": 2 }
-    },
-    "ai": [
-      { "move": "sweep", "max": 64, "w": 1 },
-      { "move": "slam", "max": 64, "w": 1 },
-      { "move": "leap", "min": 150, "w": 1 }
-    ],
-    "fallback": ["leap"]
+ "guardiao": {
+  "name": "O GUARDIÃO SEM ROSTO",
+  "look": {
+   "skin": "#e8e2d4",
+   "skinS": "#bdb6a6",
+   "hair": "#2a2830",
+   "hs": "mask",
+   "beard": "none",
+   "outfit": "#3a3540",
+   "outfitD": "#221f28",
+   "pants": "#2c2832",
+   "boots": "#16141a",
+   "cape": "#4a1420",
+   "trim": "#a08a5a",
+   "weapon": "hammer",
+   "armor": true
   },
-  "alefloki": {
-    "name": "ALEFLOKI, O CAÇADOR",
-    "mirrorName": "SOMBRA DE ALEFLOKI",
-    "fromChar": "alefloki",
-    "override": { "outfit": "#1e161c", "outfitD": "#100a0e", "pants": "#18121a", "cape": "#3e0e16", "eye": "#ff3030", "chain": "#a01822", "trim": "#a01822" },
-    "scale": 1.7, "hp": 820, "w": 18, "h": 44, "souls": 2400, "walk": 72, "p2speed": 1.25, "poise": 170,
-    "phase2": ["ALEFLOKI FICOU SÉRIO", "(agora ele não erra nem o pix)"],
-    "moves": {
-      "slash":    { "type": "melee", "wind": 0.34, "a0": 0, "a1": 0.14, "dur": 0.22, "box": [0, -36, 42, 36], "dmg": 18, "lunge": 130, "rec": 0.45, "combo": [0.5, 0.75] },
-      "dash":     { "type": "dash",  "wind": 0.45, "speed": 340, "dmg": 22, "maxT": 0.9, "rec": 0.6 },
-      "throw":    { "type": "throw", "wind": 0.5, "count": 3, "spread": 45, "speed": 230, "dmg": 14, "rec": 0.5 },
-      "backflip": { "type": "hop",   "wind": 0.1, "vy": -260, "vx": 170, "rec": 0.15, "then": "throw" },
-      "rain":     { "type": "rain",  "wind": 0.6, "count": 5, "gap": 34, "delay": 0.75, "dmg": 20, "rec": 0.8 }
-    },
-    "ai": [
-      { "move": "slash", "max": 52, "w": 3 },
-      { "move": "backflip", "max": 44, "w": 1 },
-      { "move": "dash", "min": 80, "w": 2 },
-      { "move": "throw", "min": 90, "w": 2 },
-      { "move": "rain", "w": 1.6, "phase": 2 }
+  "scale": 2.3,
+  "hp": 750,
+  "w": 30,
+  "h": 56,
+  "souls": 1500,
+  "walk": 42,
+  "p2speed": 1.3,
+  "poise": 150,
+  "phase2": [
+   "O GUARDIÃO FICOU BRAVO",
+   "(tipo sua mãe com a louça)"
+  ],
+  "moves": {
+   "sweep": {
+    "type": "melee",
+    "wind": 0.62,
+    "a0": 0,
+    "a1": 0.22,
+    "dur": 0.3,
+    "box": [
+     0,
+     -48,
+     64,
+     48
     ],
-    "fallback": ["dash", "throw"]
-  }
+    "dmg": 24,
+    "lunge": 60,
+    "rec": 0.6,
+    "combo": [
+     0,
+     0.45
+    ]
+   },
+   "slam": {
+    "type": "melee",
+    "wind": 0.85,
+    "a0": 0,
+    "a1": 0.15,
+    "dur": 0.25,
+    "box": [
+     4,
+     -60,
+     52,
+     60
+    ],
+    "dmg": 34,
+    "rec": 0.85,
+    "impact": true,
+    "shockP2": 1
+   },
+   "leap": {
+    "type": "leap",
+    "wind": 0.5,
+    "vy": -330,
+    "radius": 52,
+    "dmg": 28,
+    "rec": 0.8,
+    "shockP2": 2
+   }
+  },
+  "ai": [
+   {
+    "move": "sweep",
+    "max": 64,
+    "w": 1
+   },
+   {
+    "move": "slam",
+    "max": 64,
+    "w": 1
+   },
+   {
+    "move": "leap",
+    "min": 150,
+    "w": 1
+   }
+  ],
+  "fallback": [
+   "leap"
+  ]
+ },
+ "alefloki": {
+  "name": "ALEFLOKI, O CAÇADOR",
+  "mirrorName": "SOMBRA DE ALEFLOKI",
+  "fromChar": "alefloki",
+  "override": {
+   "outfit": "#1e161c",
+   "outfitD": "#100a0e",
+   "pants": "#18121a",
+   "cape": "#3e0e16",
+   "eye": "#ff3030",
+   "chain": "#a01822",
+   "trim": "#a01822"
+  },
+  "scale": 1.7,
+  "hp": 820,
+  "w": 18,
+  "h": 44,
+  "souls": 2400,
+  "walk": 72,
+  "p2speed": 1.25,
+  "poise": 170,
+  "phase2": [
+   "ALEFLOKI FICOU SÉRIO",
+   "(agora ele não erra nem o pix)"
+  ],
+  "moves": {
+   "slash": {
+    "type": "melee",
+    "wind": 0.34,
+    "a0": 0,
+    "a1": 0.14,
+    "dur": 0.22,
+    "box": [
+     0,
+     -36,
+     42,
+     36
+    ],
+    "dmg": 18,
+    "lunge": 130,
+    "rec": 0.45,
+    "combo": [
+     0.5,
+     0.75
+    ]
+   },
+   "dash": {
+    "type": "dash",
+    "wind": 0.45,
+    "speed": 340,
+    "dmg": 22,
+    "maxT": 0.9,
+    "rec": 0.6
+   },
+   "throw": {
+    "type": "throw",
+    "wind": 0.5,
+    "count": 3,
+    "spread": 45,
+    "speed": 230,
+    "dmg": 14,
+    "rec": 0.5
+   },
+   "backflip": {
+    "type": "hop",
+    "wind": 0.1,
+    "vy": -260,
+    "vx": 170,
+    "rec": 0.15,
+    "then": "throw"
+   },
+   "rain": {
+    "type": "rain",
+    "wind": 0.6,
+    "count": 5,
+    "gap": 34,
+    "delay": 0.75,
+    "dmg": 20,
+    "rec": 0.8
+   }
+  },
+  "ai": [
+   {
+    "move": "slash",
+    "max": 52,
+    "w": 3
+   },
+   {
+    "move": "backflip",
+    "max": 44,
+    "w": 1
+   },
+   {
+    "move": "dash",
+    "min": 80,
+    "w": 2
+   },
+   {
+    "move": "throw",
+    "min": 90,
+    "w": 2
+   },
+   {
+    "move": "rain",
+    "w": 1.6,
+    "phase": 2
+   }
+  ],
+  "fallback": [
+   "dash",
+   "throw"
+  ]
+ },
+ "torres": {
+  "name": "O GUARDIÃO DAS TORRES",
+  "look": {
+   "skin": "#c8c8d0",
+   "skinS": "#9a9aa8",
+   "hair": "#3a4458",
+   "hs": "helm",
+   "eye": "#6ae8ff",
+   "beard": "none",
+   "outfit": "#2a3040",
+   "outfitD": "#161a24",
+   "pants": "#202634",
+   "boots": "#10141c",
+   "cape": "#1a3a6a",
+   "trim": "#5ab0ff",
+   "weapon": "spear",
+   "armor": true
+  },
+  "scale": 2.2,
+  "hp": 1100,
+  "w": 28,
+  "h": 54,
+  "souls": 3500,
+  "walk": 46,
+  "p2speed": 1.3,
+  "poise": 190,
+  "phase2": [
+   "O GUARDIÃO ESTÁ CARREGADO",
+   "(a conta de luz de Matipó vai vir alta)"
+  ],
+  "moves": {
+   "thrust": {
+    "type": "melee",
+    "wind": 0.55,
+    "a0": 0,
+    "a1": 0.2,
+    "dur": 0.3,
+    "box": [
+     0,
+     -40,
+     80,
+     22
+    ],
+    "dmg": 26,
+    "lunge": 120,
+    "rec": 0.55,
+    "combo": [
+     0,
+     0.4
+    ]
+   },
+   "sweep": {
+    "type": "melee",
+    "wind": 0.6,
+    "a0": 0,
+    "a1": 0.22,
+    "dur": 0.3,
+    "box": [
+     0,
+     -50,
+     64,
+     50
+    ],
+    "dmg": 24,
+    "lunge": 50,
+    "rec": 0.6
+   },
+   "leap": {
+    "type": "leap",
+    "wind": 0.5,
+    "vy": -340,
+    "radius": 50,
+    "dmg": 28,
+    "rec": 0.8,
+    "shockP2": 2
+   },
+   "bolt": {
+    "type": "rain",
+    "wind": 0.7,
+    "count": 4,
+    "gap": 46,
+    "delay": 0.8,
+    "dmg": 24,
+    "rec": 0.7,
+    "style": "bolt"
+   },
+   "dash": {
+    "type": "dash",
+    "wind": 0.5,
+    "speed": 320,
+    "dmg": 22,
+    "maxT": 0.8,
+    "rec": 0.7
+   }
+  },
+  "ai": [
+   {
+    "move": "thrust",
+    "max": 76,
+    "w": 2
+   },
+   {
+    "move": "sweep",
+    "max": 60,
+    "w": 1.5
+   },
+   {
+    "move": "leap",
+    "min": 150,
+    "w": 1
+   },
+   {
+    "move": "bolt",
+    "min": 40,
+    "w": 1.2
+   },
+   {
+    "move": "dash",
+    "min": 110,
+    "w": 1,
+    "phase": 2
+   },
+   {
+    "move": "bolt",
+    "w": 1,
+    "phase": 2
+   }
+  ],
+  "fallback": [
+   "bolt",
+   "leap"
+  ]
+ }
 }

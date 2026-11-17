@@ -96,6 +96,17 @@ function weapon(R: Rig, type: string, hx: number, hy: number, th: number, d: any
       { const a = W(12.4, -3.6), b = W(16, -3.6); R.seam(a[0], a[1], b[0], b[1], .5); }
       { const a = W(13, -2.4), b = W(14.6, -.6), c = W(13.6, 1.6), e = W(15.4, 2.6); R.line(a[0], a[1], b[0], b[1], C.ember, .6); R.line(b[0], b[1], c[0], c[1], C.ember, .5); R.line(c[0], c[1], e[0], e[1], C.ember, .4); }
       break;
+    case 'fork':
+      cap(W(-3, 0), W(12, 0), .45, .45, C.wood, { tex: .3 });
+      cap(W(11.6, -1.8), W(11.6, 1.8), .35, .35, C.rust);
+      for (const sy of [-1.6, 0, 1.6]) cap(W(11.6, sy), W(15, sy), .3, .2, C.rust);
+      break;
+    case 'spear':
+      cap(W(-4, 0), W(15, 0), .5, .5, C.dsteel, { tex: .15 });
+      R.poly([W(14.6, -1.1), W(14.6, 1.1), W(19.4, 0)], C.blade, { grad: .3 });
+      { const a = W(15, -.6), b = W(19, 0); R.line(a[0], a[1], b[0], b[1], C.cyanE, .5); }
+      cap(W(14.2, -1.6), W(14.2, 1.6), .4, .4, C.cyanE);
+      break;
     case 'bow': {
       let prev: number[] | null = null;
       for (let k = -5; k <= 5; k++) { const s = k * .78, t = 1.9 - .075 * s * s, p = W(t, s); if (prev) cap(prev, p, .38, .38, C.wood); prev = p; }
@@ -240,6 +251,7 @@ function head(R0: Rig, d: any, o: any, M: any, hx: number, hy: number) {
     case 'bun': R.ell(hx - 1.7, hy - .3, 2.2, 3.0, H, { tex: .3 }); break;
     case 'hood': R.ell(hx - .7, hy - .2, 4.2, 4.4, M.cape, { tex: .12 }); break;
     case 'bald': if (d.hair && parseInt(d.hair.slice(1, 3), 16) > 120) R.ell(hx - 1.7, hy + .2, 1.4, 1.8, H, { tex: .3 }); break;
+    case 'hat': R.ell(hx - 1.6, hy, 1.8, 2.6, H, { tex: .3 }); break;
   }
   // rosto
   R.ell(hx, hy, 3.4, 3.8, M.skin, { tex: .05 });
@@ -292,6 +304,13 @@ function head(R0: Rig, d: any, o: any, M: any, hx: number, hy: number) {
       R.dot(hx + 2.0, hy - .5, eyeM, eyeL, ew, eh);
       break;
     case 'bald': R.shade(hx - .4, hy - 2.6, 3, 1.2, .2); break;
+    case 'hat': {
+      const hm = rampFrom(d.hatColor || '#b89a5a', 5);
+      R.ell(hx, hy - 2.8, 3.6, 2.2, hm, { tex: .35 });
+      R.ell(hx + .3, hy - 1.9, 6.4, 1.0, hm, { tex: .35 });
+      R.cap(hx - 3.4, hy - 2.4, hx + 3.6, hy - 2.4, .35, .35, rampFrom('#5a2a1a', 3));
+      break;
+    }
   }
 }
 
@@ -329,6 +348,7 @@ function quad(R: Rig, pal: any, o: any) {
   R.poly([P(1.2, -1.0), P(5.0, .1), P(4.9, 1.3), P(1.0, 1.7)], body);
   R.ell(P(4.9, .3)[0], P(4.9, .3)[1], .55, .5, rampFrom('#141010', 3));
   if (o.bite) R.poly([P(1.6, 1.4), P(4.6, 1.4), P(4.2, 2.4), P(1.6, 2.2)], rampFrom('#3a0a0a', 3)), R.line(P(2, 1.5)[0], P(2, 1.5)[1], P(4.4, 1.5)[0], P(4.4, 1.5)[1], rampFrom('#f0f0f0', 3), .5);
+  if (pal.horns) { R.cap(P(-.4, -1.6)[0], P(-.4, -1.6)[1], P(.6, -4.2)[0], P(.6, -4.2)[1], .7, .35, C.bone); R.cap(P(.6, -4.2)[0], P(.6, -4.2)[1], P(2.2, -5.0)[0], P(2.2, -5.0)[1], .35, .2, C.bone); }
   R.poly([P(-1.4, -1.5), P(-.6, -4.6), P(.9, -1.8)], ear, { lum: -.1 });
   R.dot(P(1.4, -.6)[0], P(1.4, -.6)[1], eye, .7, Math.max(1, Math.round(R.g * .8)), Math.max(1, Math.round(R.g * .5)));
 }
@@ -374,7 +394,7 @@ export function drawCharAt(d: any, x: number, y: number, face: number, o: any, s
 
 /** Quadrúpedes. pal = paleta do look (enemies.json). */
 export function drawDog(e: any, pal: any) {
-  const g = ctx.getTransform().a;
+  const g = ctx.getTransform().a * (pal.scale || 1);
   const o: any = { amp: 0, ph: 0 };
   if (e.state === 'chase' || (e.state === 'idle' && e.vx)) { o.amp = 1; o.ph = G.time * (e.state === 'chase' ? 16 : 8) + e.seed; }
   if (e.state === 'wind') { o.crouch = 1; o.bite = 1; }
@@ -392,4 +412,30 @@ export function drawDog(e: any, pal: any) {
     quad(R, pal, o);
   }, flash);
   blit(f, e.x, e.y, e.face, e.alpha, 8 * g);
+}
+
+/** Maribondo: pequeno, desenhado direto (asas batendo, listras). */
+export function drawWasp(e: any) {
+  const m = ctx.getTransform(), x = Math.round(m.a * e.x + m.e), y = Math.round(m.d * e.y + m.f), f = e.face || 1;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = e.alpha;
+  const P = (dx: number, dy: number, w: number, h: number, c: string) => { ctx.fillStyle = e.flash > 0 ? '#fff' : c; ctx.fillRect(x + (f > 0 ? dx : -dx - w), y + dy, w, h); };
+  const flap = Math.floor(G.time * 30 + e.seed) % 2;
+  ctx.globalAlpha = e.alpha * .6; P(-3, flap ? -7 : -5, 5, flap ? 3 : 2, '#e8f4ff'); P(-1, flap ? -8 : -6, 4, flap ? 3 : 2, '#cfe4ff'); ctx.globalAlpha = e.alpha;
+  P(-6, -3, 7, 5, '#0c0a06'); P(-5, -2, 5, 3, '#d8a020'); P(-3, -2, 1, 3, '#1a1208'); P(-6, -1, 1, 1, '#1a1208');
+  P(1, -3, 4, 4, '#0c0a06'); P(2, -2, 2, 2, '#3a2a10'); P(3, -2, 1, 1, '#ff3020');
+  P(-8, 0, 2, 1, '#0c0a06');
+  if (e.state === 'wind' || e.state === 'atk') P(-9, 1, 2, 1, '#f0f0f0');
+  ctx.restore();
+}
+
+/** Ninho de maribondo. */
+export function drawNest(e: any) {
+  const m = ctx.getTransform(), x = Math.round(m.a * e.x + m.e), y = Math.round(m.d * e.y + m.f);
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = e.alpha;
+  const fl = e.flash > 0;
+  ctx.fillStyle = '#0a0806'; ctx.beginPath(); ctx.ellipse(x, y - 14, 15, 17, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = fl ? '#fff' : '#8a7e6a'; ctx.beginPath(); ctx.ellipse(x, y - 14, 13, 15, 0, 0, 7); ctx.fill();
+  for (let i = 0; i < 7; i++) { ctx.fillStyle = fl ? '#fff' : (i % 2 ? '#6a604e' : '#a89a80'); ctx.fillRect(x - 12, y - 26 + i * 4, 24, 1); }
+  ctx.fillStyle = '#0a0806'; ctx.fillRect(x - 2, y - 4, 4, 3); ctx.fillRect(x - 1, y - 32, 2, 4);
+  ctx.restore();
 }

@@ -1,11 +1,10 @@
 // Motor genérico de chefes. Cada chefe é descrito em src/data/bosses.json com golpes ("moves")
 // e regras de IA ("ai"). Tipos de golpe: melee, leap, dash, throw, hop, rain.
-import { GY } from '../core/canvas';
 import { SFX } from '../core/audio';
 import { clamp, lerp, ease, weighted } from '../core/math';
 import { BOSSES, CHARS } from '../data/content';
 import { G, addText, part, shake, dust, glint } from './state';
-import { physics } from './physics';
+import { physics, gy } from './physics';
 import { nearestTarget, hitPlayers, playerTargets, hurtTarget } from './players';
 import { store } from './save';
 import { isHost, broadcast } from '../net/net';
@@ -20,11 +19,11 @@ export function mkBoss(id: string) {
     def = defCache[id] || (defCache[id] = { ...c, ...B.override });
     if (G.P.d.id === B.fromChar) name = B.mirrorName;
   }
-  return { isBoss: true, id, B, def, name, x: L.bossX, y: GY, vx: 0, vy: 0, face: -1, hp: B.hp, maxhp: B.hp, w: B.w, h: B.h, state: 'idle', t: 0, flash: 0, alpha: 1, poise: 0, phase: 1, move: null, mv: null, hitDone: false, souls: B.souls, combo: 0, wd: .5, rd: .5, next: null };
+  return { isBoss: true, id, B, def, name, x: L.bossX, y: gy(L.bossX), vx: 0, vy: 0, face: -1, hp: B.hp, maxhp: B.hp, w: B.w, h: B.h, state: 'idle', t: 0, flash: 0, alpha: 1, poise: 0, phase: 1, move: null, mv: null, hitDone: false, souls: B.souls, combo: 0, wd: .5, rd: .5, next: null };
 }
 
 function shockwave(b: any, dirs: number[]) {
-  for (const s of dirs) G.projs.push({ type: 'shock', owner: 'e', x: b.x + s * b.w, y: GY - 12, vx: s * 170, vy: 0, w: 10, h: 12, dmg: 18, life: 2.4 });
+  for (const s of dirs) G.projs.push({ type: 'shock', owner: 'e', x: b.x + s * b.w, y: gy(b.x) - 12, vx: s * 170, vy: 0, w: 10, h: 12, dmg: 18, life: 2.4 });
 }
 
 function choose(b: any, id: string) {
@@ -40,7 +39,7 @@ function startMove(b: any) {
   switch (m.type) {
     case 'melee':
       SFX.heavy();
-      if (m.impact) { SFX.slam(); shake(.4, 6); dust(b.x + b.face * 30, GY, 16, 30); if (b.phase === 2 && m.shockP2) shockwave(b, [b.face]); }
+      if (m.impact) { SFX.slam(); shake(.4, 6); dust(b.x + b.face * 30, b.y, 16, 30); if (b.phase === 2 && m.shockP2) shockwave(b, [b.face]); }
       break;
     case 'leap': b.vy = m.vy; b.vx = clamp((P.x - b.x) / .73, -260, 260); break;
     case 'dash': SFX.roll(); b.dashDir = b.face; break;
@@ -54,10 +53,10 @@ function startMove(b: any) {
     }
     case 'hop': b.vy = m.vy; b.vx = -(Math.sign(P.x - b.x) || b.face) * m.vx; SFX.roll(); break;
     case 'rain':
-      SFX.throw(); addText(b.x, b.y - b.h - 10, 'CHUVA DE ADAGAS', '#ff6060');
+      SFX.throw(); addText(b.x, b.y - b.h - 10, m.style === 'bolt' ? 'RAIOS!' : 'CHUVA DE ADAGAS', m.style === 'bolt' ? '#8ae8ff' : '#ff6060');
       for (let i = 0; i < m.count; i++) {
         const x = P.x + (i - (m.count - 1) / 2) * m.gap + (Math.random() - .5) * 12;
-        G.projs.push({ type: 'fall', owner: 'e', x, y: -12, vx: 0, vy: 0, w: 4, h: 10, dmg: m.dmg, delay: m.delay + i * .06, life: m.delay + 2 });
+        G.projs.push({ type: 'fall', style: m.style, owner: 'e', x, y: (G.L.height || 270) - 290, vx: 0, vy: 0, w: 4, h: 10, dmg: m.dmg, delay: m.delay + i * .06, life: m.delay + 2 });
       }
       break;
   }
@@ -82,7 +81,7 @@ function runMove(b: any, dt: number) {
       if (b.onGround && b.t > .12) {
         b.vx = 0; SFX.slam(); shake(.45, 7);
         for (const t of playerTargets()) if (Math.abs(t.x - b.x) < m.radius && t.y > b.y - 34) hurtTarget(t, m.dmg, b);
-        dust(b.x, GY, 20, 80);
+        dust(b.x, b.y, 20, 80);
         if (b.phase === 2 && m.shockP2) shockwave(b, [-1, 1]);
         rec();
       }

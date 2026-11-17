@@ -193,7 +193,7 @@ function guestMsg(m: any) {
     case 'full': fail('A sala está cheia (máx. 6 jogadores).'); break;
     case 'welcome': if (!NET.welcomed) { NET.welcomed = true; NET.status = ''; note('Você entrou na sala ' + m.code + '!'); NET.hooks.gotoLevel?.(m.lv); NET.hooks.joinHost?.(m.x, m.y); } break;
     case 'closed': fail('O anfitrião fechou a sala. Continuando sozinho.'); break;
-    case 'lv': NET.hooks.gotoLevel?.(m.id); break;
+    case 'lv': NET.hooks.gotoLevel?.(m.id, m.x, m.y); break;
     case 's': if (!NET.welcomed) return; NET.hooks.applyState?.(m); syncRemotes(m.pl); break;
     case 'hurt': NET.hooks.remoteHurt?.(m); break;
     case 'kill': NET.hooks.shareSouls?.(m); break;

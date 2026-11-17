@@ -1,0 +1,198 @@
+{
+ "id": "trilha",
+ "name": "TRILHA DA MATA",
+ "short": "Trilha",
+ "chapter": "Capítulo 3 · Serra da Cerrinha · onde a gente se perdeu",
+ "theme": "trilha",
+ "width": 2620,
+ "height": 360,
+ "map": [
+  3,
+  1
+ ],
+ "ground": [
+  [
+   -100,
+   500,
+   320
+  ],
+  [
+   500,
+   620,
+   298
+  ],
+  [
+   620,
+   740,
+   276
+  ],
+  [
+   740,
+   860,
+   254
+  ],
+  [
+   860,
+   1000,
+   232
+  ],
+  [
+   1000,
+   2720,
+   320
+  ]
+ ],
+ "plats": [
+  {
+   "x": 1000,
+   "y": 228,
+   "w": 120,
+   "ribbon": true
+  },
+  {
+   "x": 1160,
+   "y": 220,
+   "w": 110
+  },
+  {
+   "x": 1310,
+   "y": 212,
+   "w": 120,
+   "ribbon": true
+  },
+  {
+   "x": 1470,
+   "y": 220,
+   "w": 100
+  },
+  {
+   "x": 1610,
+   "y": 212,
+   "w": 140,
+   "ribbon": true
+  },
+  {
+   "x": 1790,
+   "y": 204,
+   "w": 110
+  },
+  {
+   "x": 1940,
+   "y": 212,
+   "w": 130,
+   "ribbon": true
+  },
+  {
+   "x": 2110,
+   "y": 204,
+   "w": 120
+  },
+  {
+   "x": 2270,
+   "y": 200,
+   "w": 140,
+   "ribbon": true
+  },
+  {
+   "x": 2440,
+   "y": 198,
+   "w": 180,
+   "ribbon": true
+  }
+ ],
+ "spawns": [
+  [
+   "lumber",
+   420
+  ],
+  [
+   "wolf",
+   1200
+  ],
+  [
+   "wolf",
+   1240
+  ],
+  [
+   "archer",
+   1670,
+   212
+  ],
+  [
+   "lumber",
+   1500
+  ],
+  [
+   "wolf",
+   1900
+  ],
+  [
+   "archer",
+   2160,
+   204
+  ],
+  [
+   "lumber",
+   2350
+  ]
+ ],
+ "fires": [
+  {
+   "x": 150,
+   "name": "FOGUEIRA DA ENTRADA DA MATA"
+  },
+  {
+   "x": 1780,
+   "name": "FOGUEIRA DOS PERDIDOS"
+  }
+ ],
+ "msgs": [
+  {
+   "x": 300,
+   "text": "Aqui a gente se perdeu uma vez. Siga as fitas vermelhas."
+  },
+  {
+   "x": 900,
+   "text": "Fitas vermelhas: por cima, pelos troncos. Por baixo... boa sorte."
+  },
+  {
+   "x": 2520,
+   "text": "Tem certeza que é por aqui? Parece que a gente já passou por esse tronco."
+  }
+ ],
+ "items": [
+  {
+   "id": "s1",
+   "x": 2560,
+   "y": 198,
+   "type": "souls",
+   "v": 300
+  },
+  {
+   "id": "s2",
+   "x": 2400,
+   "type": "souls",
+   "v": 80
+  }
+ ],
+ "links": [
+  {
+   "side": "left",
+   "to": "pasto",
+   "toX": 2570
+  },
+  {
+   "side": "right",
+   "yMax": 245,
+   "to": "arvore",
+   "toX": 24
+  },
+  {
+   "side": "right",
+   "yMin": 246,
+   "to": "trilha",
+   "toX": 40,
+   "msg": "Vocês estão andando em círculos... esse tronco é o mesmo de antes. Sigam as fitas vermelhas, lá por cima."
+  }
+ ]
+}

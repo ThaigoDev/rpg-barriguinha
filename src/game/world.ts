@@ -1,5 +1,5 @@
 // Atualização e desenho da cena de jogo (mundo, entidades, efeitos, UI por cima).
-import { ctx, R, W, H, GY, SC, txt } from '../core/canvas';
+import { ctx, R, W, H, SC, txt } from '../core/canvas';
 import { SFX } from '../core/audio';
 import { clamp } from '../core/math';
 import { hit } from '../core/input';
@@ -9,11 +9,14 @@ import { store } from './save';
 import { applyStats, updatePlayer, playerPose } from './player';
 import { updateEnemy, enemyPose } from './enemies';
 import { updateBoss, bossPose } from './boss';
-import { updateProjs, drawProjs } from './projectiles';
-import { findNear, pauseMenu, updateMenu } from './interact';
-import { respawnAll, loadLevel } from './level';
+import { updateProjs, drawProjs, drawBolts } from './projectiles';
+import { findNear, pauseMenu, updateMenu, updateLifts } from './interact';
+import { respawnAtRest, loadLevel, checkLinks, updateFade } from './level';
+import { gy } from './physics';
+import { die } from './combat';
+import { drawMap, drawWorldBits } from '../render/world_ui';
 import { getArt, drawArtBack, drawArtFront, drawLights } from '../render/art';
-import { drawCharAt, drawDog } from '../render/sprites';
+import { drawCharAt, drawDog, drawWasp, drawNest } from '../render/sprites';
 import { drawHUD, drawBanner, drawDialog, drawMenu, drawDeath, drawVictory } from '../render/ui';
 import { CHARS } from '../data/content';
 import { isTouch } from '../core/input';
@@ -23,8 +26,9 @@ import { guestSmooth } from './coop';
 
 export function updateWorld(rdt: number) {
   const P = G.P, S = G.S, L = G.L, LS = G.LS;
+  updateFade(rdt);
   if (G.scene === 'game') {
-    if (G.menu) { updateMenu(); return; }
+    if (G.menu || G.map) { if (!G.menu && G.map) { if (hit('back') || hit('confirm')) G.map = false; } else updateMenu(); return; }
     if (G.dialog) { if (hit('confirm')) { G.dialog.i++; SFX.blip(); if (G.dialog.i >= G.dialog.lines.length) G.dialog = null; } return; }
     if (hit('back')) { pauseMenu(); return; }
   }
@@ -34,7 +38,11 @@ export function updateWorld(rdt: number) {
   }
   let dt = rdt; if (G.hitstop > 0) { G.hitstop -= rdt; dt = 0; }
   G.near = G.scene === 'game' ? findNear() : null;
-  updatePlayer(dt);
+  if (!G.fade) updatePlayer(dt);
+  updateLifts(dt);
+  checkLinks();
+  // água funda: afoga
+  if (P.state !== 'dead' && G.scene === 'game') for (const w of L.water) if (P.x > w.x0 && P.x < w.x1 && P.y > w.y + 10) { G.drowned = true; die(true); break; }
   netTick(rdt);
   if (isGuest()) guestSmooth(dt);
   else {
@@ -52,7 +60,7 @@ export function updateWorld(rdt: number) {
   G.texts = G.texts.filter((t: any) => t.life > 0);
   L.fires.forEach((f: any, i: number) => {
     if (LS.lit[i] && Math.abs(f.x - G.cam - W / 2) < W && Math.random() < .3)
-      part({ x: f.x + (Math.random() - .5) * 8, y: GY - 8, vx: (Math.random() - .5) * 10, vy: -20 - Math.random() * 25, life: 1.2, c: Math.random() < .5 ? '#ffb040' : '#ff7020', g: -5 });
+      part({ x: f.x + (Math.random() - .5) * 8, y: f.y - 8, vx: (Math.random() - .5) * 10, vy: -20 - Math.random() * 25, life: 1.2, c: Math.random() < .5 ? '#ffb040' : '#ff7020', g: -5 });
   });
   if (P.buffT > 0 && Math.random() < .5) part({ x: P.x + (Math.random() - .5) * 12, y: P.y - Math.random() * 24, vx: 0, vy: -25, life: .6, c: '#a060ff' });
   if (G.scene === 'game' && P.state !== 'dead') {
@@ -68,25 +76,28 @@ export function updateWorld(rdt: number) {
   }
   const tx = G.arenaOn ? clamp(P.x - W / 2, L.arena[0] - 20, L.arena[1] + 20 - W) : clamp(P.x - W / 2 + P.face * 30, 0, L.width - W);
   G.cam += (tx - G.cam) * Math.min(1, rdt * 5);
+  const ty = clamp(P.y - 175, 0, L.height - H);
+  G.camY = (G.camY ?? ty) + (ty - (G.camY ?? ty)) * Math.min(1, rdt * 4);
   if (G.shakeT > 0) { G.shakeT -= rdt; if (G.shakeT <= 0) G.shakeM = 0; }
   if (G.banner) { G.banner.t += rdt; if (G.banner.t > G.banner.dur) G.banner = null; }
   if (G.hintT > 0) G.hintT -= rdt;
   if (G.hurtFlash > 0) G.hurtFlash = Math.max(0, G.hurtFlash - rdt);
   if (G.victT >= 0) { G.victT += rdt; if (G.victT > 4.5 && G.scene === 'game') { G.scene = 'victory'; G.victT = -1; } }
-  if (G.scene === 'dead') { G.deathT += rdt; if (G.deathT > 2 && (hit('confirm') || hit('light'))) { respawnAll(); G.scene = 'game'; } }
+  if (G.scene === 'dead') { G.deathT += rdt; if (G.deathT > 2 && (hit('confirm') || hit('light'))) { G.drowned = false; respawnAtRest(); G.scene = 'game'; } }
 }
 
 let vig: CanvasGradient | null = null;
 
 export function renderWorld() {
-  const P = G.P, L = G.L, LS = G.LS, cam = G.cam, boss = G.boss, art = getArt(L);
+  const P = G.P, L = G.L, LS = G.LS, cam = G.cam, camY = G.camY || 0, boss = G.boss, art = getArt(L);
   const sx = G.shakeT > 0 ? (Math.random() - .5) * G.shakeM * 2 : 0, sy = G.shakeT > 0 ? (Math.random() - .5) * G.shakeM * 2 : 0;
-  drawArtBack(art, cam, Math.round(sx * SC), Math.round(sy * SC));
-  ctx.save(); ctx.setTransform(SC, 0, 0, SC, Math.round((-cam + sx) * SC), Math.round(sy * SC));
+  drawArtBack(art, cam, camY, Math.round(sx * SC), Math.round(sy * SC));
+  ctx.save(); ctx.setTransform(SC, 0, 0, SC, Math.round((-cam + sx) * SC), Math.round((-camY + sy) * SC));
   drawLights(art, L.fires, LS.lit);
+  drawWorldBits();
   for (const m of L.msgs) {
     const a = .55 + .35 * Math.sin(G.time * 2 + m.x); ctx.globalAlpha = a;
-    R('#e08a2a', m.x - 6, GY - .5, 12, .5); R('#ffb050', m.x - 3.5, GY - 1, 7, .5); R('#ffd890', m.x - 1, GY - 1.5, 2, .5); ctx.globalAlpha = 1;
+    R('#e08a2a', m.x - 6, m.y - .5, 12, .5); R('#ffb050', m.x - 3.5, m.y - 1, 7, .5); R('#ffd890', m.x - 1, m.y - 1.5, 2, .5); ctx.globalAlpha = 1;
   }
   for (const it of G.items) {
     const y = it.y - 7 + Math.round(Math.sin(G.time * 3 + it.x) * 4) / 2, gl = ctx.createRadialGradient(it.x, y, .5, it.x, y, 10);
@@ -98,14 +109,17 @@ export function renderWorld() {
     const s = LS.stain; ctx.globalAlpha = .6 + .3 * Math.sin(G.time * 4); R('#8a0a14', s.x - 7, s.y - .5, 14, .5); R('#c01020', s.x - 4, s.y - 1, 8, .5); ctx.globalAlpha = 1;
     if (Math.random() < .2) part({ x: s.x + (Math.random() - .5) * 10, y: s.y - 2, vx: 0, vy: -15, life: .8, c: '#d02030' });
   }
-  if (L.npc) drawCharAt(LOOKS[L.npc.look], L.npc.x, GY, -1, { bob: Math.sin(G.time * 1.2) > 0 ? 1 : 2, armA: .2, seed: 9 });
-  if (L.exit && LS.bossDead) { const a = .3 + .2 * Math.sin(G.time * 2); ctx.globalAlpha = a; R(L.exit.to ? '#ffe0a0' : '#8a8aa0', L.exit.x - 8, GY - 40, 16, 40); ctx.globalAlpha = 1; }
+  for (const npc of L.npcs) drawCharAt(LOOKS[npc.look], npc.x, npc.y, npc.face || -1, { bob: Math.sin(G.time * 1.2 + npc.x) > 0 ? 1 : 2, armA: .2, seed: 9 });
+  if (L.exit && LS.bossDead) { const a = .3 + .2 * Math.sin(G.time * 2); ctx.globalAlpha = a; R(L.exit.to ? '#ffe0a0' : '#8a8aa0', L.exit.x - 8, L.exit.y - 40, 16, 40); ctx.globalAlpha = 1; }
   if (boss && boss.state !== 'dead') {
-    for (const gx of G.arenaOn ? L.arena : [L.arena[0]]) for (let i = 0; i < 8; i++) { ctx.globalAlpha = .08 + .06 * Math.sin(G.time * 2 + i); R('#e8e8ff', gx - 6 + Math.sin(G.time * 1.5 + i) * 3, GY - 100 + i * 13, 12, 16); }
+    for (const gx of G.arenaOn ? L.arena : [L.arena[0]]) for (let i = 0; i < 8; i++) { ctx.globalAlpha = .08 + .06 * Math.sin(G.time * 2 + i); R('#e8e8ff', gx - 6 + Math.sin(G.time * 1.5 + i) * 3, gy(gx) - 100 + i * 13, 12, 16); }
     ctx.globalAlpha = 1;
   }
   for (const e of G.enemies) {
-    if (e.kind === 'lunger') drawDog(e, e.look); else drawCharAt(e.look, e.x, e.y, e.face, enemyPose(e), 1, e.alpha);
+    if (e.kind === 'lunger' || e.kind === 'charger') drawDog(e, e.look);
+    else if (e.kind === 'flyer') drawWasp(e);
+    else if (e.kind === 'nest') drawNest(e);
+    else drawCharAt(e.look, e.x, e.y, e.face, enemyPose(e), e.scale || 1, e.alpha);
     if (e.hp < e.maxhp && e.state !== 'dead') { R('#000', e.x - 9, e.y - e.h - 9, 18, 2); R('#a01822', e.x - 8.5, e.y - e.h - 8.5, 17 * e.hp / e.maxhp, 1); }
   }
   if (boss) drawCharAt(boss.def, boss.x, boss.y, boss.face, bossPose(boss), boss.B.scale, boss.alpha);
@@ -129,6 +143,7 @@ export function renderWorld() {
   }
   ctx.globalAlpha = 1;
   drawProjs();
+  drawBolts(1 / 60);
   for (const p of G.parts) {
     ctx.globalAlpha = Math.max(0, p.life / p.max);
     const x = Math.round(p.x * SC) / SC, y = Math.round(p.y * SC) / SC;
@@ -139,13 +154,13 @@ export function renderWorld() {
   for (const t of G.texts) { ctx.globalAlpha = Math.min(1, t.life * 2); txt(t.s, Math.round(t.x), Math.round(t.y), /^\d+$/.test(t.s) ? HF + 1 : HF, t.c, 'center'); }
   ctx.globalAlpha = 1;
   const n = G.near;
-  if (n && G.scene === 'game' && !G.menu && !G.dialog) { ctx.globalAlpha = .75 + .25 * Math.sin(G.time * 4); txt((isTouch ? '' : 'E  ') + n.label, Math.round(n.x), GY - 46, HF, '#ffe0a0', 'center'); ctx.globalAlpha = 1; }
+  if (n && G.scene === 'game' && !G.menu && !G.dialog) { ctx.globalAlpha = .75 + .25 * Math.sin(G.time * 4); txt((isTouch ? '' : 'E  ') + n.label, Math.round(n.x), Math.round((n.y ?? P.y)) - 46, HF, '#ffe0a0', 'center'); ctx.globalAlpha = 1; }
   ctx.restore();
-  drawArtFront(art, cam, Math.round(sx * SC), Math.round(sy * SC));
+  drawArtFront(art, cam, camY, Math.round(sx * SC), Math.round(sy * SC));
   // setas na borda para companheiros fora da tela
   for (const r of NET.remotes.values()) {
     const rx = r.x - cam; if (rx > 6 && rx < W - 6) continue;
-    const left = rx <= 6, ax = left ? 10 : W - 10, ay = Math.max(40, Math.min(H - 40, r.y - 14));
+    const left = rx <= 6, ax = left ? 10 : W - 10, ay = Math.max(40, Math.min(H - 40, r.y - camY - 14));
     const d = CHARS.find(c => c.id === r.c) || CHARS[0], dist = Math.round(Math.abs(r.x - P.x) / 10);
     ctx.globalAlpha = .85;
     for (let k = 0; k < 4; k++) R('#9fd8ff', left ? ax + k : ax - k, ay - 3 + k * .5 + (k === 3 ? 0 : 0), 1, 6 - k * 1.5);
@@ -168,7 +183,9 @@ export function renderWorld() {
     lines.forEach((l, i) => txt(l, W - 166, 33 + i * 8, 5, '#9fd8ff'));
   }
   if (G.dialog) drawDialog();
-  if (G.menu) drawMenu();
+  if (G.menu && !G.map) drawMenu();
+  if (G.map) drawMap();
+  if (G.fade) { const f = G.fade, a = f.t < .25 ? f.t / .25 : Math.max(0, 1 - (f.t - .25) / .3); ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.fillRect(0, 0, W, H); }
   if (G.scene === 'dead') drawDeath();
   if (G.scene === 'victory') drawVictory();
 }
