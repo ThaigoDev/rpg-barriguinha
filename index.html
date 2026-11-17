@@ -2,34 +2,54 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>A Lenda dos Seis</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
 canvas{image-rendering:pixelated;image-rendering:crisp-edges;background:#000;display:block}
-#touch{position:fixed;inset:0;pointer-events:none;display:none}
+#touch{position:fixed;inset:0;pointer-events:none;display:none;z-index:2}
 #touch.on{display:block}
-.tb{position:absolute;pointer-events:auto;width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.07);border:2px solid rgba(255,210,140,.35);color:#f3d9a4;font:8px "Press Start 2P",monospace;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3}
-.tb.act{background:rgba(255,190,110,.3)}
+#stickZone{position:absolute;left:0;top:14vmin;bottom:0;width:45%;pointer-events:auto}
+#stick{position:absolute;width:28vmin;height:28vmin;margin:-14vmin 0 0 -14vmin;border-radius:50%;border:2px solid rgba(255,210,140,.35);background:rgba(255,255,255,.05);display:none;pointer-events:none}
+#knob{position:absolute;left:50%;top:50%;width:12vmin;height:12vmin;margin:-6vmin 0 0 -6vmin;border-radius:50%;background:rgba(255,200,120,.35);border:2px solid rgba(255,220,160,.6)}
+#stickHint{position:absolute;left:calc(9vmin + env(safe-area-inset-left));bottom:9vmin;width:24vmin;height:24vmin;border-radius:50%;border:2px dashed rgba(255,210,140,.18);pointer-events:none}
+.tb{--s:15vmin;position:absolute;pointer-events:auto;width:var(--s);height:var(--s);border-radius:50%;background:rgba(20,14,10,.35);border:2px solid rgba(255,210,140,.4);color:#f3d9a4;font:calc(var(--s) * .17) "Press Start 2P",monospace;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3;text-shadow:0 1px 0 #000;box-sizing:border-box}
+.tb.act{background:rgba(255,170,80,.4);transform:scale(.94)}
+.tb.big{--s:22vmin;border-width:3px}
+.tb.sm{--s:10vmin;font:calc(var(--s) * .5) system-ui,sans-serif}
+.tb.hot{border-color:#ffe0a0;box-shadow:0 0 3vmin rgba(255,200,100,.7);animation:pulse 1s infinite}
+@keyframes pulse{50%{box-shadow:0 0 1vmin rgba(255,200,100,.3)}}
+#rotate{position:fixed;inset:0;z-index:5;background:#05060c;color:#e8dcc0;display:none;flex-direction:column;align-items:center;justify-content:center;font:12px "Press Start 2P",monospace;text-align:center;line-height:1.8;padding:20px;box-sizing:border-box}
+#rotate .ic{font-size:64px;animation:rot 2s ease-in-out infinite;margin-bottom:24px}
+@keyframes rot{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+@media (orientation:portrait) and (pointer:coarse){#rotate{display:flex}}
 </style>
 </head>
 <body>
 <div id="wrap"><canvas id="c"></canvas></div>
 <div id="touch">
-  <div class="tb" data-k="ArrowLeft" style="left:14px;bottom:34px">◀</div>
-  <div class="tb" data-k="ArrowRight" style="left:78px;bottom:34px">▶</div>
-  <div class="tb" data-k="ArrowDown" style="left:46px;bottom:94px">▼</div>
-  <div class="tb" data-k="Space" style="right:14px;bottom:20px">PULO</div>
-  <div class="tb" data-k="ShiftLeft" style="right:76px;bottom:20px">ROLA</div>
-  <div class="tb" data-k="KeyJ" style="right:14px;bottom:82px">LEVE</div>
-  <div class="tb" data-k="KeyK" style="right:76px;bottom:82px">FORTE</div>
-  <div class="tb" data-k="KeyL" style="right:138px;bottom:50px">ESP</div>
-  <div class="tb" data-k="KeyQ" style="right:14px;bottom:144px">CAFÉ</div>
-  <div class="tb" data-k="KeyE" style="right:76px;bottom:144px">E</div>
-  <div class="tb" data-k="Escape" style="right:14px;top:14px;width:40px;height:40px">☰</div>
+  <div id="stickHint"></div>
+  <div id="stickZone"></div>
+  <div id="stick"><div id="knob"></div></div>
+  <div class="tb big" data-k="KeyJ" style="right:calc(6vmin + env(safe-area-inset-right));bottom:8vmin">ATQ</div>
+  <div class="tb" data-k="KeyK" style="--s:16vmin;right:calc(31vmin + env(safe-area-inset-right));bottom:4vmin">FORTE</div>
+  <div class="tb" data-k="Space" style="--s:16vmin;right:calc(8vmin + env(safe-area-inset-right));bottom:33vmin">PULO</div>
+  <div class="tb" data-k="ShiftLeft" style="right:calc(29vmin + env(safe-area-inset-right));bottom:23vmin">ROLA</div>
+  <div class="tb" data-k="KeyL" style="--s:14vmin;right:calc(49vmin + env(safe-area-inset-right));bottom:10vmin">ESP</div>
+  <div class="tb" data-k="KeyQ" style="--s:12vmin;right:calc(28vmin + env(safe-area-inset-right));bottom:41vmin">CAFÉ</div>
+  <div class="tb" id="btnE" data-k="KeyE" style="--s:12vmin;right:calc(7vmin + env(safe-area-inset-right));bottom:53vmin">USAR</div>
+  <div class="tb sm" data-k="Escape" style="right:calc(4vmin + env(safe-area-inset-right));top:4vmin">☰</div>
+  <div class="tb sm" id="fsBtn" style="left:calc(4vmin + env(safe-area-inset-left));top:4vmin">⛶</div>
 </div>
+<div id="rotate"><div class="ic">📱</div><p>Gire o celular<br>para jogar na horizontal</p></div>
 <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

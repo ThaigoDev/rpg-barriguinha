@@ -1,7 +1,7 @@
 // A Lenda dos Seis: ponto de entrada. Loop principal e cenas de título/seleção.
 import { ctx, resize, SC } from './core/canvas';
 import { SFX } from './core/audio';
-import { hit, pressed, clearPressed, initInput } from './core/input';
+import { hit, pressed, clearPressed, initInput, isTouch, goFullscreen } from './core/input';
 import { CHARS } from './data/content';
 import { G } from './game/state';
 import { save } from './game/save';
@@ -14,6 +14,12 @@ G.selIdx = save.sel || 0;
 addEventListener('resize', resize); resize();
 
 initInput((gx, gy) => {
+  if (G.scene === 'title' && isTouch) goFullscreen();
+  if (G.menu) { // tocar numa opção do menu escolhe ela
+    const r = (G.menu._rects || []).find((r: any) => gx >= r.x && gx <= r.x + r.w && gy >= r.y && gy <= r.y + r.h);
+    if (r) { G.menu.idx = r.i; pressed.Enter = true; }
+    return;
+  }
   if (G.scene === 'select') {
     if (gy >= 22 && gy <= 94) {
       const i = Math.floor((gx - 14) / 76);
@@ -22,7 +28,10 @@ initInput((gx, gy) => {
     return;
   }
   if (G.scene !== 'game' || G.dialog) pressed.Enter = true;
-});
+}, () => G.scene === 'game' && !G.menu && !G.dialog);
+
+const portrait = matchMedia('(orientation:portrait) and (pointer:coarse)');
+const btnE = document.getElementById('btnE');
 
 function update(rdt: number) {
   if (G.scene === 'title') { G.titleCam += rdt * 18; if (hit('confirm')) { SFX.blip(); G.scene = 'select'; } return; }
@@ -47,7 +56,8 @@ function render() {
 let last = performance.now();
 function frame(now: number) {
   const rdt = Math.min(.05, (now - last) / 1000); last = now; G.time += rdt;
-  try { update(rdt); render(); } catch (err) { console.error(err); }
+  try { if (!portrait.matches) update(rdt); render(); } catch (err) { console.error(err); }
+  btnE?.classList.toggle('hot', !!G.near && G.scene === 'game');
   clearPressed();
   requestAnimationFrame(frame);
 }

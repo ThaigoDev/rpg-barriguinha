@@ -19,7 +19,13 @@ Soulslike 2D em pixel art, jogado direto no navegador. Dark Souls com humor bras
 | E | Interagir (fogueira, NPC, mensagens, saída) |
 | Esc | Pausa |
 
-No celular aparecem botões na tela.
+### Celular (na horizontal)
+
+- Analógico no polegar esquerdo: encoste em qualquer lugar da metade esquerda da tela.
+- Botões à direita: **ATQ**, **FORTE** (segure para carregar), **PULO**, **ROLA**, **ESP**, **CAFÉ** e **USAR** (brilha quando tem algo para usar).
+- Menus, diálogos e seleção de personagem funcionam com toque.
+- **⛶** liga a tela cheia (no Android também trava na horizontal). No iPhone, use *Compartilhar → Adicionar à Tela de Início* para abrir em tela cheia.
+- Em pé, o jogo pausa e pede para girar o celular.
 
 ## Conteúdo
 

@@ -73,6 +73,7 @@ export function hurtPlayer(dmg: number, src: any) {
     dmg *= .12; P.vx = -P.face * 60; P.iframes = .2; if (dmg < 1) return;
   }
   P.hp -= Math.round(dmg); P.flash = .15; SFX.hurt(); shake(.25, 3.5); burst(P.x, P.y - 14, '#a01020', 10); G.hurtFlash = .3; G.hitstop = Math.max(G.hitstop, .06);
+  try { navigator.vibrate?.(dmg > 25 ? 70 : 35); } catch (e) { /* sem vibração */ }
   if (P.hp <= 0) { die(false); return; }
   if (P.state !== 'block') { P.state = 'hurt'; P.t = 0; P.vx = (src ? Math.sign(P.x - src.x) || -P.face : -P.face) * 110; P.vy = -90; }
   P.iframes = .55;

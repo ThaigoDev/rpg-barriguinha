@@ -4,6 +4,7 @@ import { ctx } from '../core/canvas';
 import { G } from '../game/state';
 import { PB, PO } from './px/raster';
 import { C, rampFrom } from './px/palette';
+import { isTouch } from '../core/input';
 
 // ---------- Rig: transforma coordenadas do esqueleto (unidades do mundo) em pixels do sprite ----------
 class Rig {
@@ -341,7 +342,7 @@ function getFrame(key: string, g: number, build: (R: Rig) => void, flash: boolea
   build(R);
   f = { c: pb.toCanvas({ outline: true, rim: .32, rimBack: .16, ao: .26, flash }), ox, oy };
   cache.set(key, f);
-  if (cache.size > 900) cache.delete(cache.keys().next().value!);
+  if (cache.size > (isTouch ? 320 : 900)) cache.delete(cache.keys().next().value!);
   return f;
 }
 function blit(f: { c: HTMLCanvasElement; ox: number; oy: number }, x: number, y: number, face: number, al: number, shadowW: number) {
