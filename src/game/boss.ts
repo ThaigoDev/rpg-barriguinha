@@ -6,6 +6,7 @@ import { BOSSES, CHARS } from '../data/content';
 import { G, addText, part, shake, dust, glint } from './state';
 import { physics, gy } from './physics';
 import { nearestTarget, hitPlayers, playerTargets, hurtTarget } from './players';
+import { hitSquash } from './enemies';
 import { store } from './save';
 import { isHost, broadcast } from '../net/net';
 
@@ -170,6 +171,7 @@ export function bossPose(b: any) {
   else if (b.state === 'roar') { o.armA = -2.6; o.bob = Math.floor(G.time * 20) % 2; }
   else if (b.state === 'idle' || b.state === 'intro') o.bob = Math.sin(G.time * 1.5) > 0 ? 0 : 1;
   else if (b.state === 'dead') o.deadP = Math.min(1, b.t * 1.5);
+  hitSquash(b, o, .6);
   return o;
 }
 

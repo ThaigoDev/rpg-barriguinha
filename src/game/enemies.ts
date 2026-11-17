@@ -147,6 +147,14 @@ export function updateEnemy(e: any, dt: number) {
   if (e.y > G.L.height + 30) { e.state = 'dead'; e.t = 1; e.alpha = 0; } // caiu no buraco
 }
 
+/** Ao levar golpe: achata, empurra um pixel para trás e recua o tronco. */
+export function hitSquash(e: any, o: any, amt = 1) {
+  if (!(e.hitT > 0)) return;
+  const k = Math.min(1, e.hitT / .13) * amt;
+  o.sx = 1 + .1 * k; o.sy = 1 - .09 * k; o.shk = (e.hitDir || 1) * k * 1.2;
+  o.lean = (o.lean || 0) - .12 * k;
+}
+
 export function enemyPose(e: any) {
   const o: any = { legA: 0, bob: 0, armA: -.9, flash: e.flash > 0, seed: e.seed };
   const ranged = e.kind === 'ranged';
@@ -160,5 +168,6 @@ export function enemyPose(e: any) {
   if (e.state === 'hurt') { o.armA = -.4; o.bob = 1; o.lean = -.18; }
   if (e.state === 'stun') { o.armA = -.2; o.bob = 1; }
   if (e.state === 'dead') o.deadP = Math.min(1, e.t * 3);
+  hitSquash(e, o);
   return o;
 }

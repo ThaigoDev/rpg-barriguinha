@@ -97,7 +97,7 @@ export function drawDialog() {
 
 export function drawMenu() {
   const m = G.menu, S = G.S;
-  const w = m.level ? 300 : m.pause || m.wide ? 350 : 230, h = m.level ? 150 : 30 + m.opts.length * 16 + 10 + (m.pause && !isTouch ? 52 : 0) + (m.sub ? 14 : 0), x = (W - w) / 2, y = m.level ? 60 : 70;
+  const w = Math.min(W - 8, m.level ? 300 : m.pause || m.wide ? 350 : 230), h = m.level ? 150 : 30 + m.opts.length * 16 + 10 + (m.pause && !isTouch ? 52 : 0) + (m.sub ? 14 : 0), x = (W - w) / 2, y = m.level ? 60 : 70;
   panel(x, y, w, h); txt(m.title, W / 2, y + 10, 8, '#e0b070', 'center');
   let oy = y + 30 + (m.sub ? 14 : 0);
   if (m.level) {
@@ -137,9 +137,17 @@ export function drawTitle() {
   if (Math.floor(G.time * 2) % 2) txt(isTouch ? 'Toque para começar' : 'Aperte ENTER', W / 2, 150, 8, '#ffe0a0', 'center');
 }
 
+/** A tela de escolha é desenhada em 480 de largura: centralizada em telas largas, encolhida nas estreitas. */
+export function selXform() {
+  const k = Math.min(1, W / 480);
+  return { k, ox: Math.round((W - 480 * k) / 2), oy: Math.round((H - 270 * k) / 2) };
+}
+
 export function drawSelect() {
   ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, 0, W, H);
-  txt('ESCOLHA SEU GUERREIRO', W / 2, 8, 8, '#e0b070', 'center');
+  const sx = selXform(); ctx.save(); ctx.translate(sx.ox, sx.oy); ctx.scale(sx.k, sx.k); // layout de 480 de largura, centralizado
+  const W2 = 480;
+  txt('ESCOLHA SEU GUERREIRO', W2 / 2, 8, 8, '#e0b070', 'center');
   for (let i = 0; i < CHARS.length; i++) {
     const x = 14 + i * 76, y = 22, sel = i === G.selIdx, c = sel ? '#e0b070' : '#4a3e2e';
     R(sel ? 'rgba(90,60,30,.6)' : 'rgba(20,16,26,.8)', x, y, 72, 72); R(c, x, y, 72, 1); R(c, x, y + 71, 72, 1); R(c, x, y, 1, 72); R(c, x + 71, y, 1, 72);
@@ -147,7 +155,7 @@ export function drawSelect() {
     txt(CHARS[i].short, x + 36, y + 63, 8, sel ? '#ffe0a0' : '#a89878', 'center');
   }
   const d = CHARS[G.selIdx], cs = charSave(d.id);
-  panel(10, 100, W - 20, 160);
+  panel(10, 100, W2 - 20, 160);
   const pose: any = { bob: Math.sin(G.time * 3) > 0 ? 0 : 1, armA: -.9, seed: 1, noShadow: true };
   if (Math.floor(G.time / 1.6) % 2 === 0) {
     const tt = (G.time % 1.6) / 1.6;
@@ -159,8 +167,9 @@ export function drawSelect() {
   const stat = (lb: string, v: number, mx: number, y: number) => { txt(lb, X, y, 8, '#8a7a5a'); R('#2a2018', X + 66, y + 1, 120, 5); R('#c09050', X + 66, y + 1, Math.round(120 * Math.min(1, v / mx)), 5); };
   stat('VIDA', d.hp, 140, 138); stat('VIGOR', d.st, 115, 148); stat('DANO', d.dmg / d.light.dur, 40, 158); stat('AGIL.', d.spd, 110, 168);
   txt(d.sp, X, 182, 8, '#c080ff');
-  wrap(d.spDesc, W - X - 24).forEach((l, i) => txt(l, X, 194 + i * 11, 8, '#d8ccb0'));
-  wrap('"' + d.tag + '"', W - X - 24).forEach((l, i) => txt(l, X, 228 + i * 11, 8, '#8a7a5a'));
-  if (cs.lv > 1 || cs.souls > 0 || cs.level !== 'vila') txt('NV ' + cs.lv + ' · ' + (LEVELS[cs.level]?.chapter.replace('Capítulo', 'CAP.') || ''), W - 20, 110, 8, '#9fd8ff', 'right');
-  txt(isTouch ? 'Toque para escolher · toque de novo para jogar' : '←/→ escolher   ENTER jogar', W / 2, 262, 8, Math.floor(G.time * 2) % 2 ? '#e0b070' : '#a08060', 'center');
+  wrap(d.spDesc, W2 - X - 24).forEach((l, i) => txt(l, X, 194 + i * 11, 8, '#d8ccb0'));
+  wrap('"' + d.tag + '"', W2 - X - 24).forEach((l, i) => txt(l, X, 228 + i * 11, 8, '#8a7a5a'));
+  if (cs.lv > 1 || cs.souls > 0 || cs.level !== 'vila') txt('NV ' + cs.lv + ' · ' + (LEVELS[cs.level]?.chapter.replace('Capítulo', 'CAP.') || ''), W2 - 20, 110, 8, '#9fd8ff', 'right');
+  txt(isTouch ? 'Toque para escolher · toque de novo para jogar' : '←/→ escolher   ENTER jogar', W2 / 2, 262, 8, Math.floor(G.time * 2) % 2 ? '#e0b070' : '#a08060', 'center');
+  ctx.restore();
 }

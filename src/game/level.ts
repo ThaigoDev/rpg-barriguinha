@@ -85,9 +85,20 @@ export function respawnAll() {
   snapCamera();
 }
 
+/** Posição horizontal da câmera centrada em x, presa à fase (e à arena do chefe, se ela couber na tela). */
+export function camTarget(x: number) {
+  const L = G.L, maxX = Math.max(0, L.width - W);
+  if (G.arenaOn && L.arena) {
+    const a0 = L.arena[0] - 20, a1 = L.arena[1] + 20;
+    const c = a1 - a0 <= W ? (a0 + a1) / 2 - W / 2 : clamp(x - W / 2, a0, a1 - W);
+    return clamp(c, 0, maxX);
+  }
+  return clamp(x - W / 2, 0, maxX);
+}
+
 export function snapCamera() {
   const P = G.P, L = G.L;
-  G.cam = clamp(P.x - W / 2, 0, L.width - W);
+  G.cam = camTarget(P.x);
   G.camY = clamp(P.y - 175, 0, L.height - H);
 }
 

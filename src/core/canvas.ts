@@ -1,15 +1,40 @@
 // Tela, resolução interna e helpers de desenho em pixel.
-export const W = 480, H = 270, GY = 230; // GY = altura do chão (unidades do mundo)
+// A altura é fixa (270); a largura acompanha o formato da janela para a tela ficar cheia, sem faixas pretas.
+export let W = 480;
+export const H = 270, GY = 230; // GY = altura do chão (unidades do mundo)
+/** Muda sempre que a largura lógica muda (quem guarda coisas do tamanho da tela usa isso para refazer). */
+export let screenVer = 0;
 export const SC = 2; // a tela tem o dobro de pixels: o mundo é 480x270, os sprites e cenários têm 960x540
 export const cv = document.getElementById('c') as HTMLCanvasElement;
 export const ctx = cv.getContext('2d') as CanvasRenderingContext2D;
 cv.width = W * SC; cv.height = H * SC;
 
-export function resize() {
+function wantW() {
+  const vw = Math.max(1, innerWidth), vh = Math.max(1, innerHeight);
+  return Math.max(320, Math.min(800, Math.round(H * vw / vh / 2) * 2));
+}
+function fit() {
+  // ocupa a janela inteira; só sobra borda em formatos extremos (mais estreito que 4:3 ou mais largo que ~3:1)
   const s = Math.min(innerWidth / (W * SC), innerHeight / (H * SC));
-  const k = s >= 2 ? Math.floor(s) : s;
-  cv.style.width = W * SC * k + 'px';
-  cv.style.height = H * SC * k + 'px';
+  let w = W * SC * s, h = H * SC * s;
+  // diferença de arredondamento (menos de 1%): estica para não sobrar 1 pixel preto na borda
+  if (innerWidth - w < innerWidth * .01) w = innerWidth;
+  if (innerHeight - h < innerHeight * .01) h = innerHeight;
+  cv.style.width = Math.round(w) + 'px';
+  cv.style.height = Math.round(h) + 'px';
+}
+function applyW(w: number) {
+  if (w === W) return;
+  W = w; cv.width = W * SC; cv.height = H * SC; screenVer++;
+  ctx.imageSmoothingEnabled = false;
+}
+let rzT: any = 0;
+export function resize() {
+  const w = wantW();
+  if (!screenVer) { applyW(w); screenVer = Math.max(1, screenVer); fit(); return; }
+  fit();
+  // espera a janela parar de mudar antes de refazer os cenários (são caros de gerar)
+  clearTimeout(rzT); rzT = setTimeout(() => { applyW(wantW()); fit(); }, 160);
 }
 
 export const FONT = '"Press Start 2P", monospace';

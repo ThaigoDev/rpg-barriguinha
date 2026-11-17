@@ -6,13 +6,17 @@ export const G: any = {
   S: null,        // save do personagem
   L: null,        // dados da fase atual (JSON)
   LS: null,       // save da fase atual
-  enemies: [], boss: null, projs: [], parts: [], texts: [], items: [], trails: [],
-  cam: 0, shakeT: 0, shakeM: 0, hitstop: 0,
+  enemies: [], boss: null, projs: [], parts: [], texts: [], items: [], trails: [], slashes: [],
+  cam: 0, shakeT: 0, shakeM: 0, hitstop: 0, kickX: 0, kickY: 0,
   menu: null, dialog: null, banner: null, arenaOn: false,
   deathT: 0, deathMsg: '', victT: -1, hintT: 0, near: null, npcTalked: {}, hurtFlash: 0,
 };
 
 export function shake(t: number, m: number) { G.shakeT = Math.max(G.shakeT, t); G.shakeM = Math.max(G.shakeM, m); }
+/** Empurrão curto da câmera na direção do golpe (dá peso sem tremer a tela toda). */
+export function kick(dx: number, dy = 0) { G.kickX += dx; G.kickY += dy; G.kickX = Math.max(-6, Math.min(6, G.kickX)); G.kickY = Math.max(-5, Math.min(5, G.kickY)); }
+/** Corte desenhado por cima do alvo no momento do acerto. */
+export function slash(x: number, y: number, ang: number, len: number, c = '#ffffff', w = 2) { G.slashes.push({ x, y, ang, len, c, w, life: .16, max: .16 }); }
 export function addText(x: number, y: number, s: string, c = '#fff') { G.texts.push({ x, y, s, c, life: 1 }); }
 export function part(p: any) { G.parts.push({ g: 0, s: 1, ...p, max: p.life }); }
 export function burst(x: number, y: number, c: string, n = 6, sp = 80, g = 200) {

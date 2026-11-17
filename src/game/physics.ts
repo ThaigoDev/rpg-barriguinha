@@ -53,33 +53,42 @@ export function physics(e: any, dt: number, bounds?: number[]) {
   const wasG = e.onGround;
   if (!e.fly) { e.vy += GRAV * dt; if (e.vy > 520) e.vy = 520; }
   const oy = e.y, ox = e.x;
+  let ref = oy; // altura de referência para pousar (muda se subimos um degrau neste quadro)
   // horizontal: paredes do relevo e portões
   e.x += e.vx * dt;
   const g = groundAt(e.x);
   if (g != null && e.y > g + .5) {
-    if (wasG && e.y - g <= STEP) e.y = g; // sobe o degrau
+    if (wasG && e.y - g <= STEP) { e.y = g; ref = g; } // sobe o degrau sem "piscar" no ar
+    // ajuda na beirada: no pulo, se os pés passaram raspando abaixo da quina, sobe nela em vez de bater
+    else if (e.assist && !wasG && e.vy > -160 && e.y - g <= 9) { e.y = g; ref = g; e.vy = Math.max(0, e.vy); }
     else e.x = ox;
   }
   if (gateBlocks(ox, e.x, e.y)) e.x = ox;
-  { const gc = groundAt(e.x); if (gc != null && e.y > gc + .5 && oy > gc + .5) { e.y = gc; e.vy = 0; } } // preso dentro do terreno (teleporte): sobe
+  { const gc = groundAt(e.x); if (gc != null && e.y > gc + .5 && oy > gc + .5) { e.y = gc; e.vy = 0; ref = gc; } } // preso dentro do terreno (teleporte): sobe
   // vertical
   e.y += e.vy * dt; e.onGround = false; e.plat = null;
   const g2 = groundAt(e.x);
-  if (g2 != null && e.y >= g2 && oy <= g2 + .5) { e.y = g2; e.vy = 0; e.onGround = true; }
+  if (g2 != null && e.y >= g2 && ref <= g2 + .5) { e.y = g2; e.vy = 0; e.onGround = true; }
   else if (g2 != null && wasG && e.vy >= 0 && g2 > e.y && g2 - e.y <= STEP && !(e.dropT > 0) && !(e.plat0)) { e.y = g2; e.vy = 0; e.onGround = true; } // desce degrau sem pular
   if (!e.onGround && e.vy >= 0 && !(e.dropT > 0)) {
     for (const p of G.L.plats.concat(G.lifts || [])) {
-      if (e.x > p.x - 2 && e.x < p.x + p.w + 2 && oy <= p.y + .5 && e.y >= p.y) { e.y = p.y; e.vy = 0; e.onGround = true; e.plat = p; break; }
+      if (e.x > p.x - 2 && e.x < p.x + p.w + 2 && ref <= p.y + .5 && e.y >= p.y) { e.y = p.y; e.vy = 0; e.onGround = true; e.plat = p; break; }
+    }
+  }
+  // continua em cima da plataforma ao andar devagar sobre ela (sem tremer entre "no ar" e "no chão")
+  if (!e.onGround && wasG && e.vy >= 0 && !(e.dropT > 0)) {
+    for (const p of G.L.plats.concat(G.lifts || [])) {
+      if (e.x > p.x - 2 && e.x < p.x + p.w + 2 && Math.abs(oy - p.y) < .6 && e.y - p.y <= STEP) { e.y = p.y; e.vy = 0; e.onGround = true; e.plat = p; break; }
     }
   }
   const lo = bounds ? bounds[0] : 12, hi = bounds ? bounds[1] : G.L.width - 12;
-  if (e.x < lo) e.x = lo; if (e.x > hi) e.x = hi;
+  if (e.x < lo) { e.x = lo; if (e.vx < 0 && e.assist) e.vx = 0; } if (e.x > hi) { e.x = hi; if (e.vx > 0 && e.assist) e.vx = 0; }
 }
 
 /** Inimigos não andam para dentro de buracos, nem caem de degraus altos ou plataformas. */
-export function edgeAhead(e: any, dir: number) {
+export function edgeAhead(e: any, dir: number, look = 8) {
   if (!e.onGround || !dir) return false;
-  const nx = e.x + dir * 8;
+  const nx = e.x + dir * look;
   if (e.plat) return nx < e.plat.x || nx > e.plat.x + e.plat.w;
   const g = groundAt(nx);
   return g == null || Math.abs(g - e.y) > STEP || gateBlocks(e.x, nx, e.y);

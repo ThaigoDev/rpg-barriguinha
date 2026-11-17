@@ -1,5 +1,5 @@
 // A Lenda dos Seis: ponto de entrada. Loop principal e cenas de título/seleção.
-import { ctx, resize, SC } from './core/canvas';
+import { ctx, resize, SC, W } from './core/canvas';
 import { SFX } from './core/audio';
 import { hit, pressed, clearPressed, initInput, isTouch, goFullscreen } from './core/input';
 import { CHARS } from './data/content';
@@ -12,7 +12,7 @@ import { updateMenu } from './game/interact';
 import { drawMenu } from './render/ui';
 import { killEnemy } from './game/combat';
 import { updateWorld, renderWorld } from './game/world';
-import { drawTitle, drawSelect, drawTitleBG } from './render/ui';
+import { drawTitle, drawSelect, drawTitleBG, selXform } from './render/ui';
 
 G.selIdx = save.sel || 0;
 const inv = /^#sala-([A-Za-z0-9]{4})$/.exec(location.hash);
@@ -49,7 +49,7 @@ function startOnline(ci: number, code: string) { joinRoom(code); startGame(ci); 
 addEventListener('resize', resize); resize();
 
 initInput((gx, gy) => {
-  if (G.scene === 'game' && gy < 16 && Math.abs(gx - 240) < 90) { G.netDebug = !G.netDebug; return; }
+  if (G.scene === 'game' && gy < 16 && Math.abs(gx - W / 2) < 90) { G.netDebug = !G.netDebug; return; }
   if (G.scene === 'title' && isTouch) goFullscreen();
   if (G.map) { G.map = false; return; }
   if (G.menu) { // tocar numa opção do menu escolhe ela
@@ -58,6 +58,7 @@ initInput((gx, gy) => {
     return;
   }
   if (G.scene === 'select') {
+    const sx = selXform(); gx = (gx - sx.ox) / sx.k; gy = (gy - sx.oy) / sx.k;
     if (gy >= 22 && gy <= 94) {
       const i = Math.floor((gx - 14) / 76);
       if (i >= 0 && i < CHARS.length) { if (i === G.selIdx) pressed.Enter = true; else { G.selIdx = i; SFX.blip(); } }

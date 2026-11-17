@@ -8,7 +8,8 @@ import { fbm, hash2 } from './px/noise';
 import { G } from '../game/state';
 import { prepLevel, groundAtL } from '../game/physics';
 
-const SW = W * SC, SH = 270 * SC, GYS = GY * SC; // 960, 540, 460
+const SH = 270 * SC, GYS = GY * SC; // 540, 460
+let SW = W * SC; // largura da tela em pixels (muda com a janela)
 
 type Layer = { c: HTMLCanvasElement; p: number; y: number };
 export type Art = { theme: string; L: any; sky: HTMLCanvasElement; layers: Layer[]; ground: HTMLCanvasElement; fore: Layer; candles: { x: number; y: number }[]; shrooms: { x: number; y: number }[]; beacons: { li: number; x: number; y: number }[]; grills: { x: number; y: number }[] };
@@ -550,6 +551,7 @@ function genFore(P: any, w: number, seed: number, theme: string) {
 const artCache = new Map<string, Art>();
 export function getArt(L: any): Art {
   prepLevel(L);
+  if (SW !== W * SC) { SW = W * SC; artCache.clear(); } // janela mudou de formato: refaz tudo na nova largura
   const key = L.id + ':' + L.width;
   let a = artCache.get(key);
   if (a) return a;
@@ -591,7 +593,7 @@ export function drawArtBack(a: Art, cam: number, camY = 0, ox = 0, oy = 0) {
   });
   if (a.theme === 'floresta' || a.theme === 'trilha') { // raios de luz
     ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = a.theme === 'trilha' ? 'rgba(255,170,90,.06)' : 'rgba(120,180,140,.05)';
-    for (let i = 0; i < 5; i++) { const x = ((i * 300 - cam * SC * .4) % 1500 + 1500) % 1500 - 300; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 50, 0); ctx.lineTo(x + 230, GYS); ctx.lineTo(x + 140, GYS); ctx.fill(); }
+    for (let i = 0; i < Math.ceil((SW + 540) / 300); i++) { const x = ((i * 300 - cam * SC * .4) % (SW + 540) + SW + 540) % (SW + 540) - 300; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 50, 0); ctx.lineTo(x + 230, GYS); ctx.lineTo(x + 140, GYS); ctx.fill(); }
     ctx.globalCompositeOperation = 'source-over';
   }
   drawLayer({ c: a.ground, p: 1, y: 0 }, cam, -Math.round(camY * SC), ox, oy);
@@ -609,7 +611,7 @@ export function drawArtFront(a: Art, cam: number, camY = 0, ox = 0, oy = 0) {
   }
   for (let i = 0; i < 26; i++) {
     const seed = i * 97.3, sp = .5 + (i % 5) * .2;
-    const x = ((hash2(i, 1, 9) * 2400 - cam * SC * (.6 + (i % 3) * .2) + Math.sin(G.time * sp + seed) * 20) % 1400 + 1400) % 1400 - 200;
+    const x = ((hash2(i, 1, 9) * 2400 - cam * SC * (.6 + (i % 3) * .2) + Math.sin(G.time * sp + seed) * 20) % (SW + 440) + SW + 440) % (SW + 440) - 200;
     const fly = a.theme === 'floresta' || a.theme === 'trilha' || a.theme === 'serra';
     const y = fly ? 140 + hash2(i, 2, 9) * 300 + Math.cos(G.time * sp * 1.3 + seed) * 14 : SH - ((G.time * (18 + (i % 7) * 6) + hash2(i, 3, 9) * SH) % SH);
     const blink = .5 + .5 * Math.sin(G.time * 3 + seed);

@@ -10,20 +10,27 @@ import { SFX, tone } from '../core/audio';
 import { lerp, ease } from '../core/math';
 import { held, hit, Act } from '../core/input';
 import { G, addText, burst, part, shake, dust } from './state';
-import { physics } from './physics';
+import { physics, edgeAhead } from './physics';
 import { dealToTargets, damageEnemy, playerHitbox, targets, die } from './combat';
 import { interact } from './interact';
 
 const BUFFER = .2;
+const approach = (v: number, t: number, d: number) => v < t ? Math.min(t, v + d) : Math.max(t, v - d);
 const JUMP_V = -280;
 
 export function newPlayer(d: any) {
-  return { d, x: 0, y: 0, vx: 0, vy: 0, face: 1, onGround: true, wasGround: true, state: 'idle', t: 0, iframes: 0, flash: 0, st: 0, stDelay: 0, cafe: 0, dropT: 0, buffT: 0, critNext: false, atk: null, hitSet: new Set(), coyote: 0, buf: null, anim: 0, hpLag: 0, safeX: 0, safeY: 0, hp: 0, maxhp: 0, maxst: 0, dmgM: 1, cafeMax: 3, combo: 0, comboT: 0, jumpCut: false, fallV: 0, stFlash: 0 } as any;
+  return { d, x: 0, y: 0, vx: 0, vy: 0, face: 1, onGround: true, wasGround: true, state: 'idle', t: 0, iframes: 0, flash: 0, st: 0, stDelay: 0, cafe: 0, dropT: 0, buffT: 0, critNext: false, atk: null, hitSet: new Set(), coyote: 0, buf: null, anim: 0, hpLag: 0, safeX: 0, safeY: 0, hp: 0, maxhp: 0, maxst: 0, dmgM: 1, cafeMax: 3, combo: 0, comboT: 0, jumpCut: false, fallV: 0, stFlash: 0, assist: true, skidT: 0, sqT: 0, stretchT: 0, stepPh: 0, ghosts: [] } as any;
 }
 
 export function applyStats(p: any) {
   const S = G.S;
   p.maxhp = p.d.hp + S.vida * 10; p.maxst = p.d.st + S.vigor * 10; p.dmgM = 1 + S.forca * .08; p.cafeMax = 3 + S.cafeBonus;
+}
+
+/** Imagem fantasma (rastro do corpo) em rolamentos, investidas e finalizações. */
+export function ghost(p: any, c = '#9fc8ff') {
+  p.ghosts.push({ x: p.x, y: p.y, face: p.face, o: { ...playerPose(), flash: false }, life: .22, max: .22, c });
+  if (p.ghosts.length > 8) p.ghosts.shift();
 }
 
 function noStamina(p: any) { if (p.st > 0) return false; p.stFlash = .4; tone(160, .08, 'square', .03); return true; }
@@ -98,7 +105,7 @@ function startAttack(kind: 'light' | 'heavy' | 'air' | 'thrust') {
     range: L.range + sw.extra, mult: sw.mult,
     whiff: p.d.id === 'vitao' && Math.random() < .07, shown: false,
   };
-  p.hitSet = new Set(); p.prevArm = null; (h || MS.impact ? SFX.heavy : SFX.swing)();
+  p.hitSet = new Set(); p.prevArm = null; p.swung = false; p.lunged = 0;
   return true;
 }
 
@@ -142,7 +149,14 @@ export function updatePlayer(dt: number) {
   if (p.state === 'dead') { p.vx *= .9; physics(p, dt); return; }
 
   // buffer de comandos
-  for (const a of ['roll', 'light', 'heavy', 'special', 'heal', 'jump', 'interact'] as Act[]) if (hit(a)) p.buf = { a, t: G.time };
+  for (const a of ['roll', 'light', 'heavy', 'special', 'heal', 'jump', 'interact'] as Act[]) if (hit(a)) {
+    // apertos extras de ataque no meio do combo contam (até 1 a mais na fila)
+    if (a === 'light' && busy && p.buf && p.buf.a === 'light' && p.buf.busy) { p.lightQ = Math.min(1, (p.lightQ || 0) + 1); continue; }
+    if (a !== 'light') p.lightQ = 0;
+    p.buf = { a, t: G.time, busy: busy };
+  }
+  // apertado no meio de um golpe/rolamento: fica na fila até a ação acabar (combo não "come" o botão)
+  if (p.buf && p.buf.busy && busy && ['light', 'heavy', 'roll', 'special', 'jump'].includes(p.buf.a)) p.buf.t = G.time;
   const want = (a: string) => p.buf && p.buf.a === a && G.time - p.buf.t <= BUFFER;
   const take = () => { p.buf = null; };
 
@@ -153,11 +167,20 @@ export function updatePlayer(dt: number) {
 
   const free = p.state === 'idle' || p.state === 'run' || p.state === 'air';
   if (free) {
-    p.vx = dir * p.d.spd * (p.buffT > 0 ? 1.1 : 1); if (dir) p.face = dir; if (dir && p.onGround) p.anim += dt;
+    const top = dir * p.d.spd * (p.buffT > 0 ? 1.1 : 1);
+    const turning = dir && p.vx && Math.sign(p.vx) !== dir;
+    if (turning && p.onGround && Math.abs(p.vx) > 55 && p.skidT <= 0) { p.skidT = .13; dust(p.x + dir * 3, p.y, 4, 14, '#4a4a55'); }
+    p.vx = approach(p.vx, top, (p.onGround ? (turning ? 2600 : dir ? 1700 : 2100) : (dir ? 1150 : 380)) * dt);
+    if (dir) p.face = dir;
+    if (p.onGround && Math.abs(p.vx) > 10) {
+      p.anim += dt * Math.min(1, Math.abs(p.vx) / p.d.spd);
+      const ph = Math.floor(p.anim * 12 / Math.PI); // um passo a cada meia volta do ciclo
+      if (ph !== p.stepPh) { p.stepPh = ph; if (Math.abs(p.vx) > p.d.spd * .7) dust(p.x - p.face * 3, p.y, 1, 8, '#4a4a55'); }
+    }
     if (want('jump') && p.coyote > 0) {
       take();
       if (held('down') && p.plat) { p.dropT = .25; p.y += 1; }
-      else { p.vy = JUMP_V; p.jumpCut = false; dust(p.x, p.y, 4, 8, '#4a4a55'); }
+      else { p.vy = JUMP_V; p.jumpCut = false; p.stretchT = .16; dust(p.x, p.y, 5, 10, '#4a4a55'); SFX.jump(); }
       p.coyote = 0;
     }
     else if (want('roll') && p.onGround) { take(); roll(dir); }
@@ -166,12 +189,14 @@ export function updatePlayer(dt: number) {
     else if (want('special')) { take(); startSpecial(); }
     else if (want('heal') && p.onGround) { take(); if (p.cafe > 0) { p.state = 'drink'; p.t = 0; p.drank = false; } else addText(p.x, p.y - 36, 'Acabou o café...', '#c8b090'); }
     else if (want('interact') && G.near) { take(); p.interactT = .35; interact(G.near); }
-    if (p.state === 'idle' || p.state === 'run' || p.state === 'air') p.state = p.onGround ? (dir ? 'run' : 'idle') : 'air';
+    if (p.state === 'idle' || p.state === 'run' || p.state === 'air') p.state = p.onGround ? (dir || Math.abs(p.vx) > 25 ? 'run' : 'idle') : 'air';
   } else switch (p.state) {
     case 'roll':
-      p.vx = p.face * (p.t < .32 ? 180 : 90);
+      p.vx = p.face * (p.t < .3 ? 185 : lerp(185, 70, Math.min(1, (p.t - .3) / .1)));
+      if (Math.floor(p.t / .06) !== Math.floor((p.t - dt) / .06)) ghost(p);
       if (p.t > .3 && want('light')) { take(); startAttack('thrust'); break; }
-      if (p.t > .4) p.state = 'idle';
+      if (p.t > .34 && want('roll') && p.onGround) { take(); roll(dir || p.face); break; } // rolamentos em sequência
+      if (p.t > .4) { p.state = 'idle'; p.sqT = .08; }
       break;
     case 'attack': {
       const a = p.atk;
@@ -181,32 +206,53 @@ export function updatePlayer(dt: number) {
         if (Math.random() < .5) part({ x: p.x + p.face * 4 + (Math.random() - .5) * 10, y: p.y - 30 - Math.random() * 10, vx: 0, vy: -20, life: .3, c: '#ffd27a' });
         if (a.charge >= .55) { addText(p.x, p.y - 40, 'CARREGADO!', '#ffd27a'); tone(700, .1, 'triangle', .05); }
       }
-      if (a.kind !== 'air') {
-        if (p.onGround) p.vx = (p.t >= a.a0 - .05 && p.t < a.a1) ? p.face * a.sw.lunge : 0;
-      } else p.vx = dir * p.d.spd * .7;
-      if (p.t >= a.a0 && p.t <= a.a1) {
+      // dá pra corrigir a direção no começo da preparação
+      if (p.t < a.a0 * .45 && dir && dir !== p.face && !a.turned) { p.face = dir; a.turned = true; }
+      if (a.heavy && a.charge > 0 && held('heavy')) { p.vx = approach(p.vx, 0, 900 * dt); }
+      else if (a.kind !== 'air') {
+        if (p.onGround) {
+          const lunging = p.t >= a.a0 - .05 && p.t < a.a1;
+          // o avanço do golpe nunca te joga de uma beirada ou plataforma
+          const blocked = edgeAhead(p, p.face, 5 + Math.abs(a.sw.lunge) * .06);
+          p.vx = lunging && !blocked ? p.face * a.sw.lunge : approach(p.vx, 0, (blocked ? 4000 : 900) * dt);
+        }
+      } else p.vx = approach(p.vx, dir * p.d.spd * .7, 900 * dt);
+      if (!p.swung && p.t >= a.a0 - .03) { p.swung = true; (a.heavy || a.MS.impact ? SFX.heavy : SFX.swing)(); if (a.last || a.heavy || a.kind === 'thrust') ghost(p, a.MS.trail); }
+      // janela de acerto: confere se este quadro passou por ela (com FPS baixo um golpe rápido não "pula" o acerto)
+      if (p.t >= a.a0 && p.t - dt <= a.a1) {
         if (a.whiff) { if (!a.shown) { a.shown = true; addText(p.x, p.y - 38, 'ERROU FEIO, ERROU RUDE', '#c080ff'); } }
         else {
-          dealToTargets(playerHitbox(a.range), a.mult * (1 + a.charge * 1.6), { set: p.hitSet, heavy: a.heavy || a.last || a.MS.poise > 1.4, impact: a.MS.impact });
+          const dA = a.sw.to - a.sw.up, ang0 = Math.abs(dA) < 1 ? 0 : dA > 0 ? 1.0 : -.9;
+          dealToTargets(playerHitbox(a.range), a.mult * (1 + a.charge * 1.6), { set: p.hitSet, heavy: a.heavy || a.last || a.MS.poise > 1.4, impact: a.MS.impact, ang: p.face > 0 ? ang0 : Math.PI - ang0 });
           trail(p, a);
         }
       }
       if (p.t > a.a1) {
         if (want('roll') && p.onGround) { take(); roll(dir); break; }
-        if (p.t > a.a1 + .03 && want('light') && a.kind !== 'heavy') { take(); p.comboT = .5; startAttack(p.onGround ? 'light' : 'air'); break; }
+        const open = p.t > a.a1 + (a.heavy ? .1 : .03);
+        if (open && want('light') && (a.kind !== 'air' || !p.onGround)) {
+          take(); p.comboT = .5;
+          if (startAttack(p.onGround ? 'light' : 'air') && p.lightQ > 0) { p.lightQ--; p.buf = { a: 'light', t: G.time, busy: true }; }
+          break;
+        }
+        if (open && want('heavy') && p.onGround) { take(); startAttack('heavy'); break; }
+        if (open && want('special')) { take(); startSpecial(); break; }
+        if (p.t > a.a1 + .08 && want('jump') && p.onGround) { take(); p.state = 'idle'; p.vy = JUMP_V; p.jumpCut = false; p.stretchT = .16; p.coyote = 0; dust(p.x, p.y, 5, 10, '#4a4a55'); break; }
       }
+      if (a.kind === 'air' && p.onGround && p.t < a.a1) { /* pousou no meio do golpe aéreo: termina o golpe no chão */ }
       if (p.t >= a.dur || (a.kind === 'air' && p.onGround && p.t > a.a1)) {
         p.state = 'idle'; if (a.kind === 'light') p.comboT = .35;
       }
       break;
     }
     case 'plunge':
-      p.vx = p.face * 20; p.vy = Math.max(p.vy, p.t < .12 ? -40 : 460);
+      p.vx = approach(p.vx, p.face * 20, 800 * dt); p.vy = Math.max(p.vy, p.t < .12 ? -40 : 460);
+      if (p.t > .12 && Math.floor(p.t / .05) !== Math.floor((p.t - dt) / .05)) ghost(p, '#ffd27a');
       dealToTargets(playerHitbox(10), 1.6, { set: p.hitSet, heavy: true });
       if (p.onGround && p.t > .1) {
         SFX.slam(); shake(.3, 4); dust(p.x, p.y, 16, 60);
         for (const e of targets()) if (Math.abs(e.x - p.x) < 34 && Math.abs(e.y - p.y) < 26 && !p.hitSet.has(e)) damageEnemy(e, 2.6, { heavy: true });
-        p.state = 'recover'; p.t = 0; p.vx = 0; // pequena recuperação ao aterrissar
+        p.state = 'recover'; p.t = 0; p.vx = 0; p.sqT = .18; // pequena recuperação ao aterrissar
       }
       break;
     case 'drink':
@@ -219,16 +265,17 @@ export function updatePlayer(dt: number) {
       if (p.t > 1) p.state = 'idle';
       break;
     case 'hurt': p.vx *= Math.pow(.02, dt); if (p.t > (p.stagger ? .55 : .32)) { p.state = 'idle'; p.stagger = false; } break;
-    case 'recover': p.vx = 0; if (p.t > .25) p.state = 'idle'; break;
+    case 'recover': p.vx = approach(p.vx, 0, 1500 * dt); if (p.t > .25) p.state = 'idle'; break;
     case 'block': p.vx = dir * p.d.spd * .35; if (!held('special') || p.st <= 0) p.state = 'idle'; break;
-    case 'parry': p.vx = 0; if (p.t > .5) p.state = 'idle'; break;
+    case 'parry': p.vx = approach(p.vx, 0, 1500 * dt); if (p.t > .5) p.state = 'idle'; break;
     case 'dash':
-      p.vx = p.face * 300; dealToTargets(playerHitbox(16), 1.4, { set: p.hitSet });
+      p.vx = edgeAhead(p, p.face, 10) ? 0 : p.face * 300; dealToTargets(playerHitbox(16), 1.4, { set: p.hitSet });
+      if (Math.floor(p.t / .04) !== Math.floor((p.t - dt) / .04)) ghost(p, '#8fb8ff');
       if (Math.random() < .6) part({ x: p.x, y: p.y - 10 - Math.random() * 12, vx: -p.face * 40, vy: 0, life: .3, c: '#8fb8ff' });
       if (p.t > .22) { p.state = 'idle'; p.vx = p.face * 60; }
       break;
     case 'slam':
-      p.vx = 0; if (!p.onGround) p.vy = Math.max(p.vy, 380);
+      p.vx = approach(p.vx, 0, 1500 * dt); if (!p.onGround) p.vy = Math.max(p.vy, 380);
       if (p.t >= .38 && !p.slammed && p.onGround) {
         p.slammed = true; SFX.slam(); shake(.35, 5);
         for (const e of targets()) if (Math.abs(e.x - p.x) < 62 && Math.abs(e.y - p.y) < 30) damageEnemy(e, 2, { heavy: true });
@@ -237,12 +284,12 @@ export function updatePlayer(dt: number) {
       if ((p.slammed && p.t > .8) || p.t > 1.6) p.state = 'idle';
       break;
     case 'cast':
-      p.vx = 0;
+      p.vx = approach(p.vx, 0, 1500 * dt);
       if (p.t >= .22 && !p.cast) { p.cast = true; G.projs.push({ x: p.x + p.face * 10, y: p.y - 16, vx: p.face * 230, vy: 0, w: 8, h: 6, owner: 'p', life: 1.6, type: 'fire' }); SFX.fire(); }
       if (p.t > .5) p.state = 'idle';
       break;
     case 'curse':
-      p.vx = 0;
+      p.vx = approach(p.vx, 0, 1500 * dt);
       if (p.t >= .25 && !p.cursed) {
         p.cursed = true; const c = Math.round(p.maxhp * .15); p.hp = Math.max(1, p.hp - c); p.buffT = 8;
         addText(p.x, p.y - 38, 'MALDIÇÃO ANTIGA!', '#c080ff'); SFX.curse(); burst(p.x, p.y - 14, '#a060ff', 16, 100, 0);
@@ -254,19 +301,25 @@ export function updatePlayer(dt: number) {
   const bounds = G.arenaOn && p.x > L.arena[0] ? [L.arena[0] + 8, L.arena[1] - 8] : null;
   p.fallV = p.vy;
   physics(p, dt, bounds);
-  if (p.onGround && !p.wasGround && p.fallV > 200) { dust(p.x, p.y, 6, 12, '#4a4a55'); p.landT = p.fallV > 380 ? .2 : .12; }
-  p.landT = Math.max(0, (p.landT || 0) - dt); p.interactT = Math.max(0, (p.interactT || 0) - dt); p.blockHitT = Math.max(0, (p.blockHitT || 0) - dt);
+  if (p.onGround && !p.wasGround && p.fallV > 120) {
+    dust(p.x, p.y, p.fallV > 300 ? 8 : 4, p.fallV > 300 ? 18 : 10, '#4a4a55');
+    p.landT = p.fallV > 380 ? .2 : p.fallV > 200 ? .12 : .06; p.sqT = p.fallV > 380 ? .2 : .12;
+  }
+  p.landT = Math.max(0, (p.landT || 0) - dt); p.sqT = Math.max(0, p.sqT - dt); p.stretchT = Math.max(0, p.stretchT - dt); p.skidT = Math.max(0, p.skidT - dt);
+  for (const g of p.ghosts) g.life -= dt; p.ghosts = p.ghosts.filter((g: any) => g.life > 0); p.interactT = Math.max(0, (p.interactT || 0) - dt); p.blockHitT = Math.max(0, (p.blockHitT || 0) - dt);
   p.wasGround = p.onGround;
   if (p.onGround) { p.safeX = p.x; p.safeY = p.y; }
   if (p.y > G.L.height + 30) die(true);
 }
+
+const TWO_HAND: Record<string, boolean> = { great: true, axe: true, staff: true };
 
 export function playerPose() {
   const p = G.P, s = p.state;
   const o: any = { legA: 0, bob: 0, armA: -.9, flash: p.flash > 0 || (p.iframes > 0 && s === 'hurt' && Math.floor(G.time * 20) % 2 === 0), seed: 1, sway: Math.min(1, Math.abs(p.vx) / 120) };
   if (p.buffT > 0) o.eye = '#d080ff';
   const sitting = (m: any) => m && (m.fire || (m.parent && m.parent.fire));
-  if (s === 'run') { o.amp = 1; o.ph = p.anim * 12; o.bob = Math.cos(p.anim * 24) > .3 ? 1 : 0; o.armA = -.9 + Math.sin(p.anim * 12) * .15; o.lean = .07; }
+  if (s === 'run') { o.amp = 1; o.ph = p.anim * 12; o.bob = Math.cos(p.anim * 24) > .3 ? 1 : 0; o.armA = -.9 + Math.sin(p.anim * 12) * .15; o.lean = .05 + .05 * Math.min(1, Math.abs(p.vx) / p.d.spd); if (TWO_HAND[p.d.weapon]) o.armA = -1.1 + Math.sin(p.anim * 12) * .08; }
   else if (s === 'idle') {
     if (sitting(G.menu)) { o.sit = true; o.armA = .5; o.armB = .6; }
     else { o.bob = Math.sin(G.time * 2.4) > .2 ? 1 : 0; o.armA = -.9 + Math.sin(G.time * 2.4) * .05; }
@@ -274,15 +327,29 @@ export function playerPose() {
   else if (s === 'air') { o.air = true; if (p.vy > 60) { o.fall = true; o.armA = -2.1; o.armB = -2.4; } else o.armA = -1.5; }
   else if (s === 'roll') o.roll = p.t / .4 * Math.PI * 2;
   else if (s === 'attack') {
-    const a = p.atk, w = a.sw, lean = w.lean || 0;
-    const up = a.heavy ? w.up : w.up;
-    o.armA = p.t < a.a0 ? lerp(w.from, up, ease(p.t / a.a0)) : p.t < a.a1 ? lerp(up, w.to, ease((p.t - a.a0) / (a.a1 - a.a0))) : lerp(w.to, -.9, (p.t - a.a1) / (a.dur - a.a1));
+    const a = p.atk, w = a.sw, lean = w.lean || 0, two = TWO_HAND[p.d.weapon];
+    // curvas com peso: preparação que desacelera no topo (antecipação), golpe que estala rápido,
+    // passa um pouco do ponto (follow-through) e volta devagar para a guarda
+    const sgn = Math.sign(w.to - w.up) || 1;
+    if (p.t < a.a0) { const u = p.t / a.a0; o.armA = lerp(w.from, w.up, 1 - Math.pow(1 - u, 2.2)); }
+    else if (p.t < a.a1) { const u = (p.t - a.a0) / (a.a1 - a.a0); o.armA = lerp(w.up, w.to + sgn * .22, 1 - Math.pow(1 - u, 3)); }
+    else { const u = Math.min(1, (p.t - a.a1) / (a.dur - a.a1)); o.armA = u < .35 ? w.to + sgn * .22 * (1 - u / .35) : lerp(w.to, -.9, ease((u - .35) / .65)); }
     // corpo: recua na preparação, avança no golpe, volta na recuperação
-    o.lean = p.t < a.a0 ? -lean * .4 * (p.t / a.a0) : p.t < a.a1 ? lerp(-lean * .4, lean, (p.t - a.a0) / (a.a1 - a.a0)) : lerp(lean, 0, (p.t - a.a1) / (a.dur - a.a1));
-    o.legA = p.t > a.a0 ? (Math.abs(w.lunge) > 60 ? 2 : 1) : 0;
-    o.bob = p.t > a.a0 && p.t < a.a1 + .08 && (a.heavy || a.MS.impact) ? 1 : 0;
-    o.armB = p.t < a.a0 ? .9 : -.2;
-    if (a.kind === 'air') { o.air = true; o.lean = 0; }
+    const k0 = p.t < a.a0 ? p.t / a.a0 : 1;
+    o.lean = p.t < a.a0 ? -lean * .55 * k0 : p.t < a.a1 ? lerp(-lean * .55, lean * 1.15, Math.min(1, (p.t - a.a0) / ((a.a1 - a.a0) * .6))) : lerp(lean * 1.15, 0, ease(Math.min(1, (p.t - a.a1) / (a.dur - a.a1))));
+    const striking = p.t >= a.a0 - .02 && p.t < a.a1 + (a.dur - a.a1) * .5;
+    o.legA = striking ? (Math.abs(w.lunge) > 60 || a.heavy ? 2 : 1) : p.t < a.a0 && (a.heavy || two) ? 1 : 0;
+    o.bob = p.t < a.a0 && (a.heavy || two) ? 1 : striking && (a.heavy || a.MS.impact || a.last) ? (p.t < a.a1 ? 2 : 1) : 0;
+    o.armB = two ? undefined : p.t < a.a0 ? .9 : -.2;
+    if (two) o.grip = 1;
+    if (a.heavy && a.charge > 0 && p.t < a.a0) { // carregando: treme e brilha
+      o.shk = (Math.floor(G.time * 40) % 2 ? .5 : -.5) * Math.min(1, a.charge / .55);
+      o.glow = a.charge >= .55 ? '#ffe6a0' : null;
+    }
+    if (a.kind === 'air') { o.air = true; o.lean = (o.lean || 0) * .5; o.legA = 0; }
+    if (a.kind === 'thrust') { o.legA = 2; }
+    // estica no golpe forte, achata no impacto
+    if (a.heavy || a.last) { if (p.t < a.a0) { o.sx = 1 - .05 * k0; o.sy = 1 + .05 * k0; } else if (p.t < a.a1 + .06) { o.sx = 1.08; o.sy = .93; } }
   }
   else if (s === 'plunge') { o.air = true; o.armA = p.t < .12 ? lerp(-.9, -3.4, p.t / .12) : 0; o.lean = .2; }
   else if (s === 'drink') { o.armA = p.t < .6 ? lerp(-.6, -2.6, p.t / .4) : -2.6; o.cup = true; o.lean = p.t > .5 && p.t < .9 ? -.12 : 0; if (p.vx) { o.amp = 1; o.ph = p.anim * 12; p.anim += 1 / 120; } }
@@ -300,6 +367,12 @@ export function playerPose() {
     else o.deadP = Math.min(1, (p.t - .45) * 3);
   }
   if (p.landT > 0 && (s === 'idle' || s === 'run')) { o.bob = 2; o.lean = .1; }
+  if (p.skidT > 0 && s === 'run') { o.lean = -.18; o.amp = 0; o.legA = 2; o.armA = -1.4; o.bob = 1; }
+  // estica no pulo, achata na aterrissagem (só na escala do desenho, a colisão não muda)
+  if (p.stretchT > 0 && !o.sx) { const k = p.stretchT / .16; o.sx = 1 - .1 * k; o.sy = 1 + .12 * k; }
+  else if (p.sqT > 0 && !o.sx) { const k = Math.min(1, p.sqT / .12); o.sx = 1 + .12 * k; o.sy = 1 - .1 * k; }
+  if (s === 'air' && !o.fall && p.vy > -70 && p.vy < 60) { o.armA = -1.9; o.armB = -1.1; } // topo do pulo
+  if (s === 'run' && Math.abs(p.vx) < p.d.spd * .5 && !p.skidT) { o.lean = .03; }
   if (p.interactT > 0 && s === 'idle') { o.armA = -1.3; o.bob = 1; o.lean = .1; }
   return o;
 }

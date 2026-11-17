@@ -1,5 +1,5 @@
 // Atualização e desenho da cena de jogo (mundo, entidades, efeitos, UI por cima).
-import { ctx, R, W, H, SC, txt } from '../core/canvas';
+import { ctx, R, W, H, SC, txt, screenVer } from '../core/canvas';
 import { SFX } from '../core/audio';
 import { clamp } from '../core/math';
 import { hit } from '../core/input';
@@ -11,12 +11,12 @@ import { updateEnemy, enemyPose } from './enemies';
 import { updateBoss, bossPose } from './boss';
 import { updateProjs, drawProjs, drawBolts } from './projectiles';
 import { findNear, pauseMenu, updateMenu, updateLifts } from './interact';
-import { respawnAtRest, loadLevel, checkLinks, updateFade } from './level';
+import { respawnAtRest, loadLevel, checkLinks, updateFade, camTarget } from './level';
 import { gy } from './physics';
 import { die } from './combat';
 import { drawMap, drawWorldBits } from '../render/world_ui';
 import { getArt, drawArtBack, drawArtFront, drawLights } from '../render/art';
-import { drawCharAt, drawDog, drawWasp, drawNest } from '../render/sprites';
+import { drawCharAt, drawGhost, drawDog, drawWasp, drawNest } from '../render/sprites';
 import { drawHUD, drawBanner, drawDialog, drawMenu, drawDeath, drawVictory } from '../render/ui';
 import { CHARS } from '../data/content';
 import { isTouch } from '../core/input';
@@ -55,6 +55,9 @@ export function updateWorld(rdt: number) {
   for (const p of G.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.g * dt; p.life -= dt; }
   G.parts = G.parts.filter((p: any) => p.life > 0);
   for (const t of G.trails) t.life -= rdt;
+  for (const t of G.slashes) t.life -= dt; G.slashes = G.slashes.filter((t: any) => t.life > 0);
+  for (const e of G.enemies) if (e.hitT > 0) e.hitT -= dt; if (G.boss && G.boss.hitT > 0) G.boss.hitT -= dt;
+  { const k = Math.pow(.0005, rdt); G.kickX *= k; G.kickY *= k; }
   G.trails = G.trails.filter((t: any) => t.life > 0);
   for (const t of G.texts) { t.y -= 18 * dt; t.life -= dt * .9; }
   G.texts = G.texts.filter((t: any) => t.life > 0);
@@ -74,7 +77,7 @@ export function updateWorld(rdt: number) {
     const st = LS.stain;
     if (st && Math.abs(P.x - st.x) < 12 && Math.abs(P.y - st.y) < 24) { S.souls += st.souls; addText(P.x, P.y - 36, '+' + st.souls + ' almas recuperadas', '#9fd8ff'); SFX.souls(); LS.stain = null; store(); }
   }
-  const tx = G.arenaOn ? clamp(P.x - W / 2, L.arena[0] - 20, L.arena[1] + 20 - W) : clamp(P.x - W / 2 + P.face * 30, 0, L.width - W);
+  const tx = camTarget(P.x + (G.arenaOn ? 0 : P.face * 30));
   G.cam += (tx - G.cam) * Math.min(1, rdt * 5);
   const ty = clamp(P.y - 175, 0, L.height - H);
   G.camY = (G.camY ?? ty) + (ty - (G.camY ?? ty)) * Math.min(1, rdt * 4);
@@ -86,11 +89,11 @@ export function updateWorld(rdt: number) {
   if (G.scene === 'dead') { G.deathT += rdt; if (G.deathT > 2 && (hit('confirm') || hit('light'))) { G.drowned = false; respawnAtRest(); G.scene = 'game'; } }
 }
 
-let vig: CanvasGradient | null = null;
+let vig: CanvasGradient | null = null, vigVer = -1;
 
 export function renderWorld() {
   const P = G.P, L = G.L, LS = G.LS, cam = G.cam, camY = G.camY || 0, boss = G.boss, art = getArt(L);
-  const sx = G.shakeT > 0 ? (Math.random() - .5) * G.shakeM * 2 : 0, sy = G.shakeT > 0 ? (Math.random() - .5) * G.shakeM * 2 : 0;
+  const sx = (G.shakeT > 0 ? (Math.random() - .5) * G.shakeM * 2 : 0) + G.kickX, sy = (G.shakeT > 0 ? (Math.random() - .5) * G.shakeM * 2 : 0) + G.kickY;
   drawArtBack(art, cam, camY, Math.round(sx * SC), Math.round(sy * SC));
   ctx.save(); ctx.setTransform(SC, 0, 0, SC, Math.round((-cam + sx) * SC), Math.round((-camY + sy) * SC));
   drawLights(art, L.fires, LS.lit);
@@ -129,18 +132,30 @@ export function renderWorld() {
     ctx.globalAlpha = .85; txt(d.short, Math.round(r.x), Math.round(r.y) - 38, HF - 1, '#9fd8ff', 'center'); ctx.globalAlpha = 1;
     if (r.mh) { R('#000', r.x - 8, r.y - 32, 16, 1.5); R('#3aa0e0', r.x - 8, r.y - 32, 16 * Math.max(0, r.hp) / r.mh, 1); }
   }
+  for (const g of P.ghosts) drawGhost(P.d, g.x, g.y, g.face, g.o, g.c, .45 * g.life / g.max);
   drawCharAt(P.d, P.x, P.y, P.face, playerPose());
   if (P.critNext && Math.floor(G.time * 8) % 2) R('#ffe080', P.x - .5, P.y - 34, 1, 1);
-  // rastros dos golpes
+  // rastros dos golpes: meia-lua cheia que afina e some (smear), com fio branco na borda
   for (const t of G.trails) {
     const k = t.life / t.max, toPhi = (th: number) => t.face > 0 ? th + Math.PI / 2 : Math.PI - (th + Math.PI / 2);
     const a0 = toPhi(t.a0), a1 = toPhi(t.a1);
     let d = a1 - a0; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;
+    const th = (t.w + 1.6) * k, ro = t.r + .8, ri = Math.max(2, t.r - th * 1.6);
+    ctx.globalAlpha = .38 * k; ctx.fillStyle = t.c;
+    ctx.beginPath(); ctx.arc(t.x, t.y, ro, a0, a0 + d, d < 0); ctx.arc(t.x, t.y, ri, a0 + d, a0, d >= 0); ctx.closePath(); ctx.fill();
     ctx.globalAlpha = .55 * k; ctx.strokeStyle = t.c; ctx.lineWidth = t.w * k + .5; ctx.lineCap = 'butt';
     ctx.beginPath(); ctx.arc(t.x, t.y, t.r, a0, a0 + d, d < 0); ctx.stroke();
-    ctx.globalAlpha = .9 * k; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = .5;
-    ctx.beginPath(); ctx.arc(t.x, t.y, t.r + .6, a0, a0 + d, d < 0); ctx.stroke();
+    ctx.globalAlpha = .95 * k; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = .6;
+    ctx.beginPath(); ctx.arc(t.x, t.y, ro, a0, a0 + d, d < 0); ctx.stroke();
   }
+  // cortes de impacto
+  for (const c of G.slashes) {
+    const k = c.life / c.max, grow = 1 - k * k, L = c.len * (.4 + .6 * grow), dx = Math.cos(c.ang) * L / 2, dy = Math.sin(c.ang) * L / 2;
+    ctx.globalAlpha = k; ctx.strokeStyle = c.c; ctx.lineCap = 'round';
+    ctx.lineWidth = c.w * k + .3; ctx.beginPath(); ctx.moveTo(c.x - dx, c.y - dy); ctx.lineTo(c.x + dx, c.y + dy); ctx.stroke();
+    ctx.lineWidth = .5; ctx.strokeStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(c.x - dx * 1.15, c.y - dy * 1.15); ctx.lineTo(c.x + dx * 1.15, c.y + dy * 1.15); ctx.stroke();
+  }
+  ctx.lineCap = 'butt';
   ctx.globalAlpha = 1;
   drawProjs();
   drawBolts(1 / 60);
@@ -167,7 +182,7 @@ export function renderWorld() {
     txt(d.short + ' ' + dist + 'm', left ? ax + 6 : ax - 6, ay - 2, HF - 1, '#9fd8ff', left ? 'left' : 'right');
     ctx.globalAlpha = 1;
   }
-  if (!vig) { vig = ctx.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, H * .95); vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,.6)'); }
+  if (!vig || vigVer !== screenVer) { vigVer = screenVer; vig = ctx.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, Math.hypot(W, H) * .55); vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,.6)'); }
   ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
   if (G.hurtFlash > 0) {
     const rg = ctx.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, H * .9);

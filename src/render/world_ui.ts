@@ -50,9 +50,12 @@ export function drawWorldBits() {
 export function drawMap() {
   const S = G.S;
   ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(0, 0, W, H);
-  panel(20, 14, W - 40, H - 28);
-  txt('MAPA DE NEVERSK', W / 2, 22, 8, '#e0b070', 'center');
-  const cell = 52, ox = 44, oy = 54;
+  // em telas estreitas o mapa encolhe para caber
+  const k = Math.min(1, W / 480), MW = W / k, MH = H / k;
+  ctx.save(); ctx.translate(0, Math.round((H - H * k) / 2)); ctx.scale(k, k);
+  panel(20, 14, MW - 40, MH - 28);
+  txt('MAPA DE NEVERSK', MW / 2, 22, 8, '#e0b070', 'center');
+  const cell = 52, ox = 44 + Math.round((MW - 480) / 2), oy = 54;
   const pos = (id: string) => { const m = LEVELS[id].map || [0, 0]; return [ox + m[0] * cell, oy + m[1] * cell * .72]; };
   const known = (id: string) => S.visited?.[id];
   const edges: [string, string][] = [];
@@ -81,7 +84,8 @@ export function drawMap() {
     if (vis && S.levels[id]?.lit?.some((l: boolean) => l)) R('#ff9a3a', x + w / 2 - 4, y - h / 2 + 2, 2, 2);
   }
   // legenda das regiões
-  let ly = H - 40;
+  let ly = MH - 40;
   for (const r of REGIONS) { if (r.areas.some((a: string) => known(a))) { txt('· ' + r.name, 34, ly, HF - 1, '#8a7a5a'); ly += 8; } }
-  txt('ESC / toque para fechar', W - 34, H - 26, HF - 1, '#6a5a4a', 'right');
+  txt('ESC / toque para fechar', MW - 34, MH - 26, HF - 1, '#6a5a4a', 'right');
+  ctx.restore();
 }

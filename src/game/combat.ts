@@ -2,7 +2,7 @@
 import { SFX } from '../core/audio';
 import { pick } from '../core/math';
 import { TEXTS } from '../data/content';
-import { G, addText, burst, part, shake } from './state';
+import { G, addText, burst, part, shake, kick, slash } from './state';
 import { ov, ebox } from './physics';
 import { store } from './save';
 import { bossDefeated } from './boss';
@@ -12,7 +12,8 @@ export const pbox = () => {
   const P = G.P;
   return P.state === 'roll' ? { x: P.x - 5, y: P.y - 14, w: 10, h: 14 } : { x: P.x - 5, y: P.y - 24, w: 10, h: 24 };
 };
-export function playerHitbox(r: number) { const P = G.P; return { x: P.face > 0 ? P.x + 2 : P.x - 2 - r, y: P.y - 28, w: r, h: 28 }; }
+// alcance para a frente a partir do corpo; começa um pouco atrás do centro para pegar quem está colado em você
+export function playerHitbox(r: number) { const P = G.P; return { x: P.face > 0 ? P.x - 3 : P.x + 3 - (r + 5), y: P.y - 32, w: r + 5, h: 32 }; }
 
 export function targets() {
   const a = G.enemies.filter((e: any) => e.state !== 'dead');
@@ -38,14 +39,22 @@ export function damageEnemy(e: any, mult: number, o: any) {
   dmg = Math.max(1, Math.round(dmg));
   addText(e.x, e.y - e.h - 6, String(dmg), tag ? '#ffd84a' : '#ffffff');
   if (tag) addText(e.x, e.y - e.h - 16, tag, '#ffb040');
-  hitFx(e, P.x, !!o.heavy);
-  if (o.impact) shake(.12, 2);
+  hitFx(e, P.x, !!o.heavy || !!tag, o.ang);
+  if (o.impact || tag) shake(.12, tag ? 3 : 2);
+  if (tag) SFX.crit();
   if (isGuest()) { e.flash = .12; toHost({ t: 'hit', eid: e.isBoss ? 'boss' : e.id, dmg, heavy: !!o.heavy, x: P.x }); return; }
   applyDamage(e, dmg, !!o.heavy, P.x);
 }
 
-function hitFx(e: any, fromX: number, heavy: boolean) {
-  SFX.hit(); burst(e.x, e.y - e.h / 2, '#b01020', 7);
+function hitFx(e: any, fromX: number, heavy: boolean, ang?: number) {
+  const dir = Math.sign(e.x - fromX) || 1;
+  SFX.hit(); burst(e.x, e.y - e.h / 2, '#b01020', heavy ? 11 : 7);
+  // corte por cima do alvo, inclinado no sentido do golpe
+  const a = ang ?? (dir > 0 ? .5 : Math.PI - .5);
+  slash(e.x - dir * 1, e.y - e.h * .55, a, heavy ? 30 : 22, '#ffffff', heavy ? 3 : 2);
+  if (heavy) slash(e.x, e.y - e.h * .55, a + 1.4, 12, '#ffd27a', 1.5);
+  kick(dir * (heavy ? 3 : 1.6), heavy ? 1 : 0);
+  e.hitT = heavy ? .2 : .13; e.hitDir = dir;
   for (let i = 0; i < 6; i++) part({ x: e.x - Math.sign(e.x - fromX) * e.w * .3, y: e.y - e.h * .55, vx: Math.sign(e.x - fromX) * (60 + Math.random() * 120), vy: (Math.random() - .6) * 120, life: .18 + Math.random() * .12, c: i % 2 ? '#ffffff' : '#ffd27a', g: 0, s: 2 });
   G.hitstop = Math.max(G.hitstop, heavy ? .08 : .045);
 }
@@ -94,6 +103,7 @@ export function hurtPlayer(dmg: number, src: any) {
     if (P.st < 0) { P.st = 0; P.state = 'hurt'; P.t = 0; P.vx = -P.face * 90; addText(P.x, P.y - 36, 'GUARDA QUEBRADA', '#ff8060'); P.iframes = .4; return; }
     dmg *= .12; P.vx = -P.face * 60; P.iframes = .2; P.blockHitT = .18; if (dmg < 1) return;
   }
+  P.buf = null; P.lightQ = 0; kick(-P.face * 2, 1);
   P.hp -= Math.round(dmg); P.flash = .15; SFX.hurt(); shake(.25, 3.5); burst(P.x, P.y - 14, '#a01020', 10); G.hurtFlash = .3; G.hitstop = Math.max(G.hitstop, .06);
   try { navigator.vibrate?.(dmg > 25 ? 70 : 35); } catch (e) { /* sem vibração */ }
   if (P.hp <= 0) { die(false); return; }

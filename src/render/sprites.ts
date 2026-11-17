@@ -145,8 +145,23 @@ function humanoid(R: Rig, d: any, o: any, M: any) {
       [-3.6 - sw * 3, -2.6 + Math.cos(w) * .6], [-2.4 - sw * 2.6, -.4], [-1.4 - sw * 2, -2.2], [-.4, -1.6 + Math.sin(w + 2) * .4], [.2, S + 9]], M.cape, { lum: -.12, tex: .14 });
     R.seam(-1.4, S + 1, -3.4 - sw * 3, -2.4, -.4); R.seam(-2.5, S + 1.5, -5 - sw * 3.6, -2.4, -.32); R.seam(-.6, S + 2, -1.2 - sw * 2, -2.4, -.3);
   }
+  // segunda mão no cabo (armas de duas mãos): braço de trás resolvido por IK até o cabo
+  let grip: number[] | null = null;
+  if (o.grip && d.weapon !== 'none' && o.roll == null && !o.deadP) {
+    const th = o.armA ?? -.9, [ex, ey] = dir(th + .3), [fx, fy] = dir(th);
+    const hx0 = .9 + ex * 4 + fx * 3.6, hy0 = S + .6 + ey * 4 + fy * 3.6;
+    const gx = hx0 - fx * 1.7, gy = hy0 - fy * 1.7, bx = -1.0, by = S + .8;
+    let dx = gx - bx, dy = gy - by; const D0 = Math.hypot(dx, dy) || 1, D = Math.min(7.3, Math.max(1.2, D0));
+    dx /= D0; dy /= D0;
+    const L1 = 4, L2 = 3.6, ca = Math.max(-1, Math.min(1, (L1 * L1 + D * D - L2 * L2) / (2 * L1 * D))), A = Math.acos(ca);
+    const base = Math.atan2(dy, dx), e1 = [bx + Math.cos(base + A) * L1, by + Math.sin(base + A) * L1], e2 = [bx + Math.cos(base - A) * L1, by + Math.sin(base - A) * L1];
+    const el = e1[1] > e2[1] ? e1 : e2, hd = [bx + dx * D, by + dy * D];
+    R.cap(bx, by, el[0], el[1], 1.3, 1.1, M.outfitD, { lum: -.3 });
+    R.cap(el[0], el[1], hd[0], hd[1], 1.1, 1.0, armored ? C.dsteel : M.outfitD, { lum: -.3 });
+    grip = hd;
+  }
   // braço de trás
-  {
+  if (!grip) {
     const th = o.armB ?? (.25 + (o.amp ? Math.sin(o.ph) * .55 : 0));
     const sx = -1.0, sy = S + .8, [ex, ey] = dir(th + .2), el = [sx + ex * 4, sy + ey * 4], [fx, fy] = dir(th), hd = [el[0] + fx * 3.6, el[1] + fy * 3.6];
     R.cap(sx, sy, el[0], el[1], 1.3, 1.1, M.outfitD, { lum: -.3 });
@@ -202,6 +217,7 @@ function humanoid(R: Rig, d: any, o: any, M: any) {
     if (d.bracelet) R.ell(el[0] + fx * 2.6, el[1] + fy * 2.6, 1.05, 1.05, C.silver);
     weapon(R, o.cup ? 'cup' : d.weapon, hd[0], hd[1], th, d, o);
     R.ell(hd[0], hd[1], 1.05, 1.05, armored ? C.leather : M.skin);
+    if (grip) R.ell(grip[0], grip[1], 1.0, 1.0, armored ? C.leather : M.skin, { lum: -.15 });
   } else {
     R.cap(.9, S + .6, 1.6, S + 6, 1.3, 1.1, M.outfit); R.ell(1.8, S + 6.6, 1.0, 1.0, M.skin);
   }
@@ -368,20 +384,26 @@ function getFrame(key: string, g: number, build: (R: Rig) => void, flash: boolea
   if (cache.size > (isTouch ? 320 : 900)) cache.delete(cache.keys().next().value!);
   return f;
 }
-function blit(f: { c: HTMLCanvasElement; ox: number; oy: number }, x: number, y: number, face: number, al: number, shadowW: number) {
+function blit(f: { c: HTMLCanvasElement; ox: number; oy: number }, x: number, y: number, face: number, al: number, shadowW: number, kx = 1, ky = 1, glow?: string | null) {
   const m = ctx.getTransform(), sx = m.a * x + m.c * y + m.e, sy = m.b * x + m.d * y + m.f;
-  ctx.save(); ctx.setTransform(face < 0 ? -1 : 1, 0, 0, 1, Math.round(sx), Math.round(sy)); ctx.globalAlpha *= al;
-  if (shadowW) { ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(0, 0, shadowW, Math.max(2, shadowW * .18), 0, 0, 7); ctx.fill(); }
-  ctx.drawImage(f.c, -f.ox, -f.oy); ctx.restore();
+  ctx.save();
+  if (shadowW) { ctx.setTransform(1, 0, 0, 1, Math.round(sx), Math.round(sy)); ctx.globalAlpha *= al; ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(0, 0, shadowW * kx, Math.max(2, shadowW * .18), 0, 0, 7); ctx.fill(); ctx.globalAlpha /= al || 1; }
+  // escala de "squash & stretch" a partir dos pés
+  ctx.setTransform((face < 0 ? -1 : 1) * kx, 0, 0, ky, Math.round(sx), Math.round(sy)); ctx.globalAlpha *= al;
+  ctx.drawImage(f.c, -f.ox, -f.oy);
+  if (glow) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= .35 + .25 * Math.sin(G.time * 30); ctx.drawImage(f.c, -f.ox, -f.oy); }
+  ctx.restore();
 }
 const q = (v: number | undefined, s: number) => (v == null ? '' : Math.round(v / s));
+let lastKey = '';
 
 /** Desenha um humanoide com os pés em (x, y) do sistema de coordenadas atual. */
 export function drawCharAt(d: any, x: number, y: number, face: number, o: any, sc = 1, al = 1) {
   const g = sc * ctx.getTransform().a;
   const wave = Math.floor(G.time * 5 + (o.seed || 0)) % 4;
   const key = ['h', lid(d), g.toFixed(2), q(o.armA, .13), q(o.armB, .2), o.legA | 0, o.amp ? Math.round(((o.ph % 6.2832) + 6.2832) % 6.2832 / 6.2832 * 8) % 8 : 'n', o.bob | 0,
-    o.roll != null ? Math.round(o.roll / (Math.PI / 6)) % 12 : '', q(o.deadP, .2), q(o.lean, .05), o.sit ? 1 : 0, o.fall ? 1 : 0, o.block ? 1 : 0, o.cup ? 1 : 0, o.eye || '', o.air ? 1 : 0, o.flash ? 1 : 0, wave, q(o.sway, .34), o.nock ? 1 : 0].join('|');
+    o.roll != null ? Math.round(o.roll / (Math.PI / 6)) % 12 : '', q(o.deadP, .2), q(o.lean, .05), o.sit ? 1 : 0, o.fall ? 1 : 0, o.block ? 1 : 0, o.cup ? 1 : 0, o.eye || '', o.air ? 1 : 0, o.flash ? 1 : 0, wave, q(o.sway, .34), o.nock ? 1 : 0, o.grip ? 1 : 0].join('|');
+  lastKey = key;
   const f = getFrame(key, g, R => {
     const oo = { ...o, wave: wave * Math.PI / 2, sway: ((q(o.sway, .34) as any) * .34) || 0 };
     if (o.roll != null) { R.rot = Math.round(o.roll / (Math.PI / 6)) * (Math.PI / 6); R.px = 0; R.py = -6; R.dy = 3; oo.armA = -2.4; }
@@ -389,7 +411,24 @@ export function drawCharAt(d: any, x: number, y: number, face: number, o: any, s
     else if (o.lean && o.roll == null) { R.rot = (q(o.lean, .05) as any) * .05; R.px = 0; R.py = -2; }
     humanoid(R, d, oo, mats(d));
   }, !!o.flash);
-  blit(f, x, y, face, al, o.noShadow ? 0 : 6 * g);
+  blit(f, x + (o.shk || 0), y, face, al, o.noShadow ? 0 : 6 * g, o.sx || 1, o.sy || 1, o.glow);
+}
+
+/** Silhueta colorida de um quadro (imagem fantasma de rolamentos e investidas). */
+const tintC = document.createElement('canvas'), tintX = tintC.getContext('2d')!;
+export function drawGhost(d: any, x: number, y: number, face: number, o: any, c: string, al: number) {
+  const g = ctx.getTransform().a;
+  const before = cache.size;
+  drawCharAt(d, -9999, -9999, face, { ...o, noShadow: true }, 1, 0); // garante o quadro no cache (alpha 0)
+  void before;
+  const key = lastKey; const f = cache.get(key); if (!f) return;
+  if (tintC.width < f.c.width || tintC.height < f.c.height) { tintC.width = f.c.width; tintC.height = f.c.height; }
+  tintX.clearRect(0, 0, tintC.width, tintC.height); tintX.globalCompositeOperation = 'source-over'; tintX.drawImage(f.c, 0, 0);
+  tintX.globalCompositeOperation = 'source-in'; tintX.fillStyle = c; tintX.fillRect(0, 0, f.c.width, f.c.height);
+  const m = ctx.getTransform(), sx = m.a * x + m.e, sy = m.d * y + m.f;
+  ctx.save(); ctx.setTransform(face < 0 ? -1 : 1, 0, 0, 1, Math.round(sx), Math.round(sy)); ctx.globalAlpha = al; ctx.globalCompositeOperation = 'lighter';
+  ctx.drawImage(tintC, 0, 0, f.c.width, f.c.height, -f.ox, -f.oy, f.c.width, f.c.height); ctx.restore();
+  void g;
 }
 
 /** Quadrúpedes. pal = paleta do look (enemies.json). */
@@ -411,7 +450,8 @@ export function drawDog(e: any, pal: any) {
     if (o.dead) { R.rot = -.5; R.px = 0; R.py = -3; R.dy = 2; }
     quad(R, pal, o);
   }, flash);
-  blit(f, e.x, e.y, e.face, e.alpha, 8 * g);
+  const hk = e.hitT > 0 ? Math.min(1, e.hitT / .13) : 0;
+  blit(f, e.x + (hk ? (e.hitDir || 1) * hk : 0), e.y, e.face, e.alpha, 8 * g, 1 + .1 * hk, 1 - .1 * hk);
 }
 
 /** Maribondo: pequeno, desenhado direto (asas batendo, listras). */
