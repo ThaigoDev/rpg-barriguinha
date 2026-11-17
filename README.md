@@ -35,13 +35,14 @@ Até 6 amigos na mesma fase, cada um com seu personagem.
 2. Na pausa, **Copiar convite** gera um link do tipo `https://seu-site/#sala-K7QD`. Quem abrir o link já cai na opção de entrar.
 3. Os amigos escolhem o personagem → **Entrar numa sala** → digitam o código.
 
-Como funciona: conexão direta entre os navegadores (WebRTC, biblioteca PeerJS), sem servidor próprio e sem conta. O anfitrião
-simula inimigos e chefes e manda o estado do mundo ~15x por segundo; cada convidado controla o próprio personagem e avisa quando
-acerta alguém. Almas de inimigos mortos vão para todos; só o anfitrião troca de fase. Se o anfitrião morrer, o mundo reinicia na
-fogueira como no modo solo.
+Como funciona: todos se conectam a um retransmissor MQTT público e gratuito via WebSocket seguro (broker.emqx.io, com
+broker.hivemq.com e test.mosquitto.org de reserva) e trocam mensagens pelos tópicos da sala. Não precisa de servidor próprio nem
+de conta, e funciona em qualquer rede (4G, Wi-Fi), porque ninguém precisa se conectar direto ao aparelho do outro.
+O anfitrião simula inimigos e chefes e manda o estado do mundo ~15x por segundo; cada convidado controla o próprio personagem e
+avisa quando acerta alguém. Almas de inimigos mortos vão para todos; só o anfitrião troca de fase. Se o anfitrião morrer, o mundo
+reinicia na fogueira como no modo solo; se ele sair, os convidados continuam sozinhos.
 
-- A sinalização usa o servidor público gratuito do PeerJS. Para usar um servidor próprio: `?peer=host:porta` na URL.
-- Algumas redes móveis muito restritas podem impedir a conexão direta; se acontecer, tente outra rede (Wi-Fi).
+- Para usar um broker próprio: `?mqtt=wss://seu-broker/mqtt` na URL (todos os jogadores precisam usar o mesmo).
 
 ## Conteúdo
 
