@@ -111,7 +111,9 @@ function weapon(R: Rig, type: string, hx: number, hy: number, th: number, d: any
 function humanoid(R: Rig, d: any, o: any, M: any) {
   const b = o.bob || 0, armored = !!d.armor, g = R.g;
   let aF: number, kF: number, aB: number, kB: number;
-  if (o.air || o.roll != null) { aF = .95; kF = 1.7; aB = .25; kB = 1.4; }
+  if (o.sit) { aF = 1.5; kF = 1.55; aB = 1.3; kB = 1.75; }
+  else if (o.fall) { aF = .3; kF = .5; aB = -.35; kB = .3; }
+  else if (o.air || o.roll != null) { aF = .95; kF = 1.7; aB = .25; kB = 1.4; }
   else if (o.amp) { const s = Math.sin(o.ph); aF = s * .62; aB = -s * .62; kF = .12 + Math.max(0, Math.cos(o.ph)) * 1.0; kB = .12 + Math.max(0, -Math.cos(o.ph)) * 1.0; }
   else if (o.legA) { aF = .17 * o.legA + .06; aB = -.17 * o.legA - .06; kF = .16 + .1 * Math.abs(o.legA); kB = .22; }
   else { aF = .1; aB = -.1; kF = .14; kB = .14; }
@@ -120,6 +122,7 @@ function humanoid(R: Rig, d: any, o: any, M: any) {
   const leg = (hx: number, a: number, k: number) => { const kx = hx + Math.sin(a) * TL, ky = hipY + Math.cos(a) * TL; return { hx, kx, ky, fx: kx + Math.sin(a - k) * SL, fy: ky + Math.cos(a - k) * SL }; };
   const LF = leg(1.2, aF, kF), LB = leg(-1.2, aB, kB);
   if (!o.air && o.roll == null) R.dy = -(Math.max(LF.fy, LB.fy) + .7);
+  if (o.sit) R.dy += .6;
 
   const S = hipY - 9.2, hx = .7, hy = S - 3.4;
   const shinMat = armored ? C.dsteel : M.boots;
@@ -358,11 +361,12 @@ export function drawCharAt(d: any, x: number, y: number, face: number, o: any, s
   const g = sc * ctx.getTransform().a;
   const wave = Math.floor(G.time * 5 + (o.seed || 0)) % 4;
   const key = ['h', lid(d), g.toFixed(2), q(o.armA, .13), q(o.armB, .2), o.legA | 0, o.amp ? Math.round(((o.ph % 6.2832) + 6.2832) % 6.2832 / 6.2832 * 8) % 8 : 'n', o.bob | 0,
-    o.roll != null ? Math.round(o.roll / (Math.PI / 6)) % 12 : '', q(o.deadP, .2), o.block ? 1 : 0, o.cup ? 1 : 0, o.eye || '', o.air ? 1 : 0, o.flash ? 1 : 0, wave, q(o.sway, .34), o.nock ? 1 : 0].join('|');
+    o.roll != null ? Math.round(o.roll / (Math.PI / 6)) % 12 : '', q(o.deadP, .2), q(o.lean, .05), o.sit ? 1 : 0, o.fall ? 1 : 0, o.block ? 1 : 0, o.cup ? 1 : 0, o.eye || '', o.air ? 1 : 0, o.flash ? 1 : 0, wave, q(o.sway, .34), o.nock ? 1 : 0].join('|');
   const f = getFrame(key, g, R => {
     const oo = { ...o, wave: wave * Math.PI / 2, sway: ((q(o.sway, .34) as any) * .34) || 0 };
     if (o.roll != null) { R.rot = Math.round(o.roll / (Math.PI / 6)) * (Math.PI / 6); R.px = 0; R.py = -6; R.dy = 3; oo.armA = -2.4; }
     if (o.deadP) { R.rot = -Math.PI / 2 * ((q(o.deadP, .2) as any) * .2); R.px = 0; R.py = 0; }
+    else if (o.lean && o.roll == null) { R.rot = (q(o.lean, .05) as any) * .05; R.px = 0; R.py = -2; }
     humanoid(R, d, oo, mats(d));
   }, !!o.flash);
   blit(f, x, y, face, al, o.noShadow ? 0 : 6 * g);

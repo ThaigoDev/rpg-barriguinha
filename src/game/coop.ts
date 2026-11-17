@@ -30,6 +30,13 @@ NET.hooks = {
     G.banner = { text: 'CHEFE AMASSADO', sub: 'Vitória da sala!', t: 0, dur: 4, color: '#ffd27a' }; G.victT = 0;
   },
   applyState,
+  // convidado aparece do lado do anfitrião (e não na fogueira do próprio save, que pode estar longe)
+  joinHost: (x: number, y: number) => {
+    const P = G.P; if (!P || x == null) return;
+    P.x = x - 16; P.y = y; P.vx = P.vy = 0; P.safeX = P.x; P.safeY = P.y; P.iframes = 1.5;
+    G.cam = Math.max(0, Math.min(G.L.width - 480, P.x - 240));
+    for (let i = 0; i < 16; i++) part({ x: P.x + (Math.random() - .5) * 12, y: P.y - Math.random() * 26, vx: 0, vy: -30, life: .8, c: '#9fd8ff' });
+  },
   backToSolo: () => { rebuildWorld(); },
 };
 

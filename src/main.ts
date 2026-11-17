@@ -49,6 +49,7 @@ function startOnline(ci: number, code: string) { joinRoom(code); startGame(ci); 
 addEventListener('resize', resize); resize();
 
 initInput((gx, gy) => {
+  if (G.scene === 'game' && gy < 16 && Math.abs(gx - 240) < 90) { G.netDebug = !G.netDebug; return; }
   if (G.scene === 'title' && isTouch) goFullscreen();
   if (G.menu) { // tocar numa opção do menu escolhe ela
     const r = (G.menu._rects || []).find((r: any) => gx >= r.x && gx <= r.x + r.w && gy >= r.y && gy <= r.y + r.h);
@@ -69,6 +70,7 @@ const portrait = matchMedia('(orientation:portrait) and (pointer:coarse)');
 const btnE = document.getElementById('btnE');
 
 function update(rdt: number) {
+  if (pressed.F3) G.netDebug = !G.netDebug;
   if (G.scene === 'title') { G.titleCam += rdt * 18; if (hit('confirm')) { SFX.blip(); G.scene = 'select'; } return; }
   if (G.scene === 'select') {
     if (jb.classList.contains('on')) return;

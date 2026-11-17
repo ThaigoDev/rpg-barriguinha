@@ -18,6 +18,7 @@ export const NET: any = {
   code: '', status: '', client: null as any, broker: 0, gen: 0,
   guests: new Map<string, number>(), // id do convidado -> último contato (anfitrião)
   remotes: new Map<string, any>(), myId: '', sendT: 0, lastHost: 0, welcomed: false, hooks: {} as any,
+  rx: 0, tx: 0, lastRx: 0, brokerUrl: '',
 };
 const ROOT = 'lenda6/v1/';
 const ALPH = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -44,7 +45,7 @@ const T = (sub: string) => ROOT + NET.code + '/' + sub;
 function connect(i: number, onReady: () => void, onFail: (why: string) => void) {
   if (i >= BROKERS.length) { onFail('sem conexão com o servidor de salas'); return; }
   const gen = ++NET.gen;
-  NET.broker = i;
+  NET.broker = i; NET.brokerUrl = BROKERS[i];
   let done = false;
   const c = mqtt.connect(BROKERS[i], { clientId: 'l6_' + NET.myId, clean: true, connectTimeout: 6000, reconnectPeriod: 2000, keepalive: 20 });
   NET.client = c;
@@ -54,6 +55,7 @@ function connect(i: number, onReady: () => void, onFail: (why: string) => void) 
   c.on('message', (topic: string, payload: Uint8Array) => {
     if (gen !== NET.gen) return;
     let m: any; try { m = JSON.parse(new TextDecoder().decode(payload)); } catch (e) { return; }
+    NET.rx++; NET.lastRx = performance.now();
     if (NET.role === 'host') hostMsg(m.from, m);
     else if (NET.role === 'guest') guestMsg(m);
   });
@@ -115,7 +117,7 @@ function dropGuest(id: string) {
 }
 
 // ---------------- envio ----------------
-function pub(topic: string, m: any) { if (NET.client?.connected) NET.client.publish(topic, JSON.stringify(m), { qos: 0 }); }
+function pub(topic: string, m: any) { if (NET.client?.connected) { NET.client.publish(topic, JSON.stringify(m), { qos: 0 }); NET.tx++; } }
 export function toHost(m: any) { if (NET.role === 'guest') pub(T('h'), { ...m, from: NET.myId }); }
 export function toGuest(id: string, m: any) { pub(T('g/' + id), m); }
 export function broadcast(m: any) { if (NET.role === 'host') pub(T('all'), m); }
@@ -170,7 +172,7 @@ function hostMsg(from: string, m: any) {
         NET.remotes.set(from, { id: from, c: m.c, x: G.P.x, y: G.P.y, tx: G.P.x, ty: G.P.y, f: 1, s: 'idle', hp: 1, mh: 1, o: {} });
         note(name + ' entrou na sala!'); burst(G.P.x, G.P.y - 20, '#9fd8ff', 10, 60, 0);
       }
-      toGuest(from, { t: 'welcome', lv: G.L.id, code: NET.code });
+      toGuest(from, { t: 'welcome', lv: G.L.id, code: NET.code, x: Math.round(G.P.x), y: Math.round(G.P.y) });
       break;
     }
     case 'p': {
@@ -189,7 +191,7 @@ function guestMsg(m: any) {
   NET.lastHost = performance.now();
   switch (m.t) {
     case 'full': fail('A sala está cheia (máx. 6 jogadores).'); break;
-    case 'welcome': if (!NET.welcomed) { NET.welcomed = true; NET.status = ''; note('Você entrou na sala ' + m.code + '!'); NET.hooks.gotoLevel?.(m.lv); } break;
+    case 'welcome': if (!NET.welcomed) { NET.welcomed = true; NET.status = ''; note('Você entrou na sala ' + m.code + '!'); NET.hooks.gotoLevel?.(m.lv); NET.hooks.joinHost?.(m.x, m.y); } break;
     case 'closed': fail('O anfitrião fechou a sala. Continuando sozinho.'); break;
     case 'lv': NET.hooks.gotoLevel?.(m.id); break;
     case 's': if (!NET.welcomed) return; NET.hooks.applyState?.(m); syncRemotes(m.pl); break;

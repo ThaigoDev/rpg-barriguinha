@@ -54,7 +54,7 @@ function bonfireMenu(i: number) {
   ];
   if (!isGuest() && LEVEL_ORDER.filter(unlocked).length > 1) opts.push({ label: 'Viajar', fn: () => { G.menu = travelMenu(G.menu); } });
   opts.push({ label: 'Sair', fn: () => { G.menu = null; } });
-  G.menu = { title: G.L.fires[i].name, idx: 0, opts };
+  G.menu = { title: G.L.fires[i].name, idx: 0, opts, fire: true };
 }
 
 function levelMenu(parent: any) {

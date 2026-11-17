@@ -39,6 +39,7 @@ export function damageEnemy(e: any, mult: number, o: any) {
   addText(e.x, e.y - e.h - 6, String(dmg), tag ? '#ffd84a' : '#ffffff');
   if (tag) addText(e.x, e.y - e.h - 16, tag, '#ffb040');
   hitFx(e, P.x, !!o.heavy);
+  if (o.impact) shake(.12, 2);
   if (isGuest()) { e.flash = .12; toHost({ t: 'hit', eid: e.isBoss ? 'boss' : e.id, dmg, heavy: !!o.heavy, x: P.x }); return; }
   applyDamage(e, dmg, !!o.heavy, P.x);
 }
@@ -90,12 +91,12 @@ export function hurtPlayer(dmg: number, src: any) {
   if (P.state === 'block' && (!src || Math.sign(src.x - P.x) === P.face)) {
     P.st -= dmg * 1.1; P.stDelay = .8; SFX.block(); burst(P.x + P.face * 7, P.y - 14, '#ffd84a', 8, 90);
     if (P.st < 0) { P.st = 0; P.state = 'hurt'; P.t = 0; P.vx = -P.face * 90; addText(P.x, P.y - 36, 'GUARDA QUEBRADA', '#ff8060'); P.iframes = .4; return; }
-    dmg *= .12; P.vx = -P.face * 60; P.iframes = .2; if (dmg < 1) return;
+    dmg *= .12; P.vx = -P.face * 60; P.iframes = .2; P.blockHitT = .18; if (dmg < 1) return;
   }
   P.hp -= Math.round(dmg); P.flash = .15; SFX.hurt(); shake(.25, 3.5); burst(P.x, P.y - 14, '#a01020', 10); G.hurtFlash = .3; G.hitstop = Math.max(G.hitstop, .06);
   try { navigator.vibrate?.(dmg > 25 ? 70 : 35); } catch (e) { /* sem vibração */ }
   if (P.hp <= 0) { die(false); return; }
-  if (P.state !== 'block') { P.state = 'hurt'; P.t = 0; P.vx = (src ? Math.sign(P.x - src.x) || -P.face : -P.face) * 110; P.vy = -90; }
+  if (P.state !== 'block') { P.state = 'hurt'; P.t = 0; P.stagger = dmg >= 22; P.vx = (src ? Math.sign(P.x - src.x) || -P.face : -P.face) * 110; P.vy = -90; }
   P.iframes = .55;
 }
 

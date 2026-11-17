@@ -6,7 +6,7 @@ export const G: any = {
   S: null,        // save do personagem
   L: null,        // dados da fase atual (JSON)
   LS: null,       // save da fase atual
-  enemies: [], boss: null, projs: [], parts: [], texts: [], items: [],
+  enemies: [], boss: null, projs: [], parts: [], texts: [], items: [], trails: [],
   cam: 0, shakeT: 0, shakeM: 0, hitstop: 0,
   menu: null, dialog: null, banner: null, arenaOn: false,
   deathT: 0, deathMsg: '', victT: -1, hintT: 0, near: null, npcTalked: {}, hurtFlash: 0,

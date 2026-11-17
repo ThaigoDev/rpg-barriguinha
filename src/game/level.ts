@@ -38,6 +38,10 @@ export function respawnAll() {
   P.x = f.x + 22; P.y = GY; P.vx = P.vy = 0; P.state = 'idle'; P.t = 0; P.face = 1;
   applyStats(P); P.hp = P.maxhp; P.hpLag = P.hp; P.st = P.maxst; P.cafe = P.cafeMax; P.buffT = 0; P.iframes = 1; P.critNext = false;
   P.safeX = P.x; P.safeY = P.y;
+  if (isGuest()) { // convidado renasce perto do anfitrião
+    const h = NET.remotes.get('host');
+    if (h && h.s !== 'dead' && h.tx != null) { P.x = h.tx - 16; P.y = h.ty; P.safeX = P.x; P.safeY = P.y; }
+  }
   if (isGuest()) { G.projs = G.projs.filter((p: any) => p.rep); } // convidado: o mundo vem do anfitrião
   else rebuildWorld();
   G.texts = [];

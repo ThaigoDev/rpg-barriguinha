@@ -46,6 +46,8 @@ export function updateWorld(rdt: number) {
   updateProjs(dt);
   for (const p of G.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.g * dt; p.life -= dt; }
   G.parts = G.parts.filter((p: any) => p.life > 0);
+  for (const t of G.trails) t.life -= rdt;
+  G.trails = G.trails.filter((t: any) => t.life > 0);
   for (const t of G.texts) { t.y -= 18 * dt; t.life -= dt * .9; }
   G.texts = G.texts.filter((t: any) => t.life > 0);
   L.fires.forEach((f: any, i: number) => {
@@ -108,13 +110,24 @@ export function renderWorld() {
   }
   if (boss) drawCharAt(boss.def, boss.x, boss.y, boss.face, bossPose(boss), boss.B.scale, boss.alpha);
   for (const r of NET.remotes.values()) {
-    const d = CHARS.find(c => c.id === r.c); if (!d) continue;
+    const d = CHARS.find(c => c.id === r.c) || CHARS[0];
     drawCharAt(d, r.x, r.y, r.f || 1, { ...(r.o || {}), seed: 5 }, 1, r.s === 'dead' ? .5 : 1);
     ctx.globalAlpha = .85; txt(d.short, Math.round(r.x), Math.round(r.y) - 38, HF - 1, '#9fd8ff', 'center'); ctx.globalAlpha = 1;
     if (r.mh) { R('#000', r.x - 8, r.y - 32, 16, 1.5); R('#3aa0e0', r.x - 8, r.y - 32, 16 * Math.max(0, r.hp) / r.mh, 1); }
   }
   drawCharAt(P.d, P.x, P.y, P.face, playerPose());
   if (P.critNext && Math.floor(G.time * 8) % 2) R('#ffe080', P.x - .5, P.y - 34, 1, 1);
+  // rastros dos golpes
+  for (const t of G.trails) {
+    const k = t.life / t.max, toPhi = (th: number) => t.face > 0 ? th + Math.PI / 2 : Math.PI - (th + Math.PI / 2);
+    const a0 = toPhi(t.a0), a1 = toPhi(t.a1);
+    let d = a1 - a0; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;
+    ctx.globalAlpha = .55 * k; ctx.strokeStyle = t.c; ctx.lineWidth = t.w * k + .5; ctx.lineCap = 'butt';
+    ctx.beginPath(); ctx.arc(t.x, t.y, t.r, a0, a0 + d, d < 0); ctx.stroke();
+    ctx.globalAlpha = .9 * k; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = .5;
+    ctx.beginPath(); ctx.arc(t.x, t.y, t.r + .6, a0, a0 + d, d < 0); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
   drawProjs();
   for (const p of G.parts) {
     ctx.globalAlpha = Math.max(0, p.life / p.max);
@@ -129,6 +142,16 @@ export function renderWorld() {
   if (n && G.scene === 'game' && !G.menu && !G.dialog) { ctx.globalAlpha = .75 + .25 * Math.sin(G.time * 4); txt((isTouch ? '' : 'E  ') + n.label, Math.round(n.x), GY - 46, HF, '#ffe0a0', 'center'); ctx.globalAlpha = 1; }
   ctx.restore();
   drawArtFront(art, cam, Math.round(sx * SC), Math.round(sy * SC));
+  // setas na borda para companheiros fora da tela
+  for (const r of NET.remotes.values()) {
+    const rx = r.x - cam; if (rx > 6 && rx < W - 6) continue;
+    const left = rx <= 6, ax = left ? 10 : W - 10, ay = Math.max(40, Math.min(H - 40, r.y - 14));
+    const d = CHARS.find(c => c.id === r.c) || CHARS[0], dist = Math.round(Math.abs(r.x - P.x) / 10);
+    ctx.globalAlpha = .85;
+    for (let k = 0; k < 4; k++) R('#9fd8ff', left ? ax + k : ax - k, ay - 3 + k * .5 + (k === 3 ? 0 : 0), 1, 6 - k * 1.5);
+    txt(d.short + ' ' + dist + 'm', left ? ax + 6 : ax - 6, ay - 2, HF - 1, '#9fd8ff', left ? 'left' : 'right');
+    ctx.globalAlpha = 1;
+  }
   if (!vig) { vig = ctx.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, H * .95); vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,.6)'); }
   ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
   if (G.hurtFlash > 0) {
@@ -137,6 +160,13 @@ export function renderWorld() {
     ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
   }
   drawHUD(); drawBanner();
+  if (G.netDebug && online()) {
+    const age = NET.lastRx ? Math.round((performance.now() - NET.lastRx) / 100) / 10 : -1;
+    const lines = ['REDE: ' + NET.role + '  sala ' + NET.code, (NET.brokerUrl || '').replace('wss://', ''), 'eu ' + NET.myId + '  env ' + NET.tx + '  rec ' + NET.rx + '  ult ' + age + 's'];
+    for (const r of NET.remotes.values()) lines.push((r.c || '?') + ' x' + Math.round(r.x) + ' ' + r.s);
+    R('rgba(0,0,0,.7)', W - 170, 30, 164, 6 + lines.length * 8);
+    lines.forEach((l, i) => txt(l, W - 166, 33 + i * 8, 5, '#9fd8ff'));
+  }
   if (G.dialog) drawDialog();
   if (G.menu) drawMenu();
   if (G.scene === 'dead') drawDeath();

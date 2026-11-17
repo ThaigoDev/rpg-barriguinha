@@ -28,31 +28,77 @@ export function applyStats(p: any) {
 
 function noStamina(p: any) { if (p.st > 0) return false; p.stFlash = .4; tone(160, .08, 'square', .03); return true; }
 
-// perfis de golpe leve: 0 = de cima, 1 = de baixo pra cima, 2 = estocada
-const SWING = [
-  { from: -.9, up: -3.2, to: -.2, mult: 1, extra: 0, lunge: 25 },
-  { from: -.9, up: -.1, to: -3.0, mult: 1.1, extra: 2, lunge: 30 },
-  { from: -1.0, up: -.7, to: -1.57, mult: 1.45, extra: 7, lunge: 95 },
-];
+// ---------------- personalidade das armas ----------------
+// Cada arma tem sua sequência de golpes leves (combo) e seu golpe forte.
+// from/up/to = ângulos do braço (preparação → topo → fim do golpe); spd = multiplicador de duração;
+// lunge = avanço; lean = inclinação do corpo; extra = alcance extra; poise = quanto desequilibra o inimigo.
+type Swing = { from: number; up: number; to: number; mult: number; extra: number; lunge: number; lean: number; spd?: number };
+export const MOVESETS: Record<string, { chain: Swing[]; heavy: Swing; len: number; trail: string; poise: number; impact?: boolean }> = {
+  sword: {
+    len: 12.6, trail: '#dfe8ff', poise: 1,
+    chain: [
+      { from: -.9, up: -3.2, to: -.2, mult: 1, extra: 0, lunge: 25, lean: .1 },
+      { from: -.9, up: -.1, to: -3.0, mult: 1.1, extra: 2, lunge: 30, lean: -.06 },
+      { from: -1.0, up: -.7, to: -1.57, mult: 1.45, extra: 7, lunge: 95, lean: .18, spd: 1.15 },
+    ],
+    heavy: { from: -.9, up: -3.9, to: -.2, mult: 2.2, extra: 5, lunge: 40, lean: .16 },
+  },
+  daggers: {
+    len: 7.4, trail: '#e8f0ff', poise: .7,
+    chain: [
+      { from: -1.2, up: -.9, to: -1.65, mult: .85, extra: 2, lunge: 45, lean: .12, spd: .8 },
+      { from: -1.3, up: -1.0, to: -1.75, mult: .85, extra: 2, lunge: 45, lean: .12, spd: .8 },
+      { from: -.6, up: -3.0, to: -.3, mult: 1, extra: 0, lunge: 30, lean: .05 },
+      { from: -.3, up: -3.7, to: -.1, mult: 1.6, extra: 5, lunge: 110, lean: .22, spd: 1.2 },
+    ],
+    heavy: { from: -1.0, up: -.5, to: -1.6, mult: 2.4, extra: 10, lunge: 190, lean: .26 },
+  },
+  axe: {
+    len: 10.5, trail: '#ffe0b0', poise: 1.7, impact: true,
+    chain: [
+      { from: -.9, up: -3.6, to: -.05, mult: 1.15, extra: 0, lunge: 20, lean: .16 },
+      { from: -.3, up: -.15, to: -2.8, mult: 1.35, extra: 4, lunge: 35, lean: -.12, spd: 1.1 },
+    ],
+    heavy: { from: -.9, up: -4.1, to: 0, mult: 2.6, extra: 3, lunge: 30, lean: .22 },
+  },
+  great: {
+    len: 15.8, trail: '#c8a0ff', poise: 1.5, impact: true,
+    chain: [
+      { from: -.9, up: -3.8, to: -.1, mult: 1.2, extra: 2, lunge: 25, lean: .18 },
+      { from: -.2, up: -.1, to: -3.4, mult: 1.35, extra: 4, lunge: 30, lean: -.12, spd: 1.1 },
+      { from: -.9, up: -3.9, to: -.05, mult: 1.6, extra: 3, lunge: 45, lean: .22, spd: 1.2 },
+    ],
+    heavy: { from: -.9, up: -4.2, to: 0, mult: 2.5, extra: 6, lunge: 35, lean: .24 },
+  },
+  staff: {
+    len: 12, trail: '#ffc070', poise: .9,
+    chain: [
+      { from: -1.2, up: -1.0, to: -1.6, mult: .9, extra: 4, lunge: 35, lean: .1, spd: .9 },
+      { from: -.9, up: -3.0, to: -.3, mult: 1.15, extra: 0, lunge: 25, lean: .1 },
+    ],
+    heavy: { from: -.9, up: -3.7, to: -.2, mult: 2.1, extra: 4, lunge: 30, lean: .14 },
+  },
+};
+export const moveset = (d: any) => MOVESETS[d.weapon] || MOVESETS.sword;
 
 function startAttack(kind: 'light' | 'heavy' | 'air' | 'thrust') {
   const p = G.P;
   if (noStamina(p)) return false;
-  const L = p.d.light, h = kind === 'heavy';
+  const L = p.d.light, h = kind === 'heavy', MS = moveset(p.d);
   let combo = 0;
-  if (kind === 'light') { combo = p.comboT > 0 ? (p.combo + 1) % 3 : 0; p.combo = combo; p.comboT = 0; }
-  if (kind === 'thrust') combo = 2;
-  const sw = SWING[combo];
-  p.st -= h ? L.cost * 2 : L.cost * (kind === 'air' ? .8 : 1); p.stDelay = .6; p.state = 'attack'; p.t = 0;
+  if (kind === 'light') { combo = p.comboT > 0 ? (p.combo + 1) % MS.chain.length : 0; p.combo = combo; p.comboT = 0; }
+  const sw: Swing = h ? MS.heavy : kind === 'thrust' ? MS.chain[MS.chain.length - 1] : kind === 'air' ? MS.chain[0] : MS.chain[combo];
+  const k = sw.spd || 1, last = !h && combo === MS.chain.length - 1;
+  p.st -= h ? L.cost * 2 : L.cost * (kind === 'air' ? .8 : 1) * (last ? 1.2 : 1); p.stDelay = .6; p.state = 'attack'; p.t = 0;
   const dirIn = (held('right') ? 1 : 0) - (held('left') ? 1 : 0); if (dirIn) p.face = dirIn; // virar no começo do golpe
   p.atk = {
-    kind, heavy: h, combo, sw, charge: 0,
-    dur: h ? L.dur * 1.75 : L.dur * (combo === 2 ? 1.15 : 1),
-    a0: h ? L.a0 * 2.1 : L.a0, a1: h ? L.a1 * 1.9 : L.a1,
-    range: L.range + (h ? 5 : sw.extra), mult: h ? 2.2 : sw.mult,
+    kind, heavy: h, combo, sw, charge: 0, last, MS,
+    dur: h ? L.dur * 1.75 : L.dur * k,
+    a0: h ? L.a0 * 2.1 : L.a0 * k, a1: h ? L.a1 * 1.9 : L.a1 * k,
+    range: L.range + sw.extra, mult: sw.mult,
     whiff: p.d.id === 'vitao' && Math.random() < .07, shown: false,
   };
-  p.hitSet = new Set(); (h ? SFX.heavy : SFX.swing)();
+  p.hitSet = new Set(); p.prevArm = null; (h || MS.impact ? SFX.heavy : SFX.swing)();
   return true;
 }
 
@@ -65,6 +111,17 @@ function startSpecial() {
   P.st -= cost; P.stDelay = .6; P.t = 0; P.hitSet = new Set(); P.slammed = P.cast = P.cursed = false;
   P.state = sp;
   if (sp === 'dash') SFX.roll(); if (sp === 'parry') tone(900, .05, 'triangle', .04);
+}
+
+/** Rastro do golpe: um arco do ângulo anterior do braço até o atual. */
+function trail(p: any, a: any) {
+  const th = playerPose().armA as number;
+  if (p.prevArm != null && Math.abs(th - p.prevArm) > .02 && Math.abs(th - p.prevArm) < 3) {
+    const r = 6.6 + a.MS.len * .92;
+    const c = p.d.blade === 'ember' ? '#ffb04a' : a.MS.trail;
+    G.trails.push({ x: p.x + p.face * .9, y: p.y - 20.4, r, a0: p.prevArm, a1: th, face: p.face, life: .14, max: .14, c, w: a.heavy ? 3 : 2 });
+  }
+  p.prevArm = th;
 }
 
 function roll(dir: number) {
@@ -108,7 +165,7 @@ export function updatePlayer(dt: number) {
     else if (want('heavy')) { take(); if (p.onGround) startAttack('heavy'); else if (!noStamina(p)) { p.state = 'plunge'; p.t = 0; p.st -= 20; p.stDelay = .6; p.hitSet = new Set(); SFX.heavy(); } }
     else if (want('special')) { take(); startSpecial(); }
     else if (want('heal') && p.onGround) { take(); if (p.cafe > 0) { p.state = 'drink'; p.t = 0; p.drank = false; } else addText(p.x, p.y - 36, 'Acabou o café...', '#c8b090'); }
-    else if (want('interact') && G.near) { take(); interact(G.near); }
+    else if (want('interact') && G.near) { take(); p.interactT = .35; interact(G.near); }
     if (p.state === 'idle' || p.state === 'run' || p.state === 'air') p.state = p.onGround ? (dir ? 'run' : 'idle') : 'air';
   } else switch (p.state) {
     case 'roll':
@@ -125,11 +182,14 @@ export function updatePlayer(dt: number) {
         if (a.charge >= .55) { addText(p.x, p.y - 40, 'CARREGADO!', '#ffd27a'); tone(700, .1, 'triangle', .05); }
       }
       if (a.kind !== 'air') {
-        if (p.onGround) p.vx = (p.t >= a.a0 - .05 && p.t < a.a1) ? p.face * (a.heavy ? 40 : a.sw.lunge) : 0;
+        if (p.onGround) p.vx = (p.t >= a.a0 - .05 && p.t < a.a1) ? p.face * a.sw.lunge : 0;
       } else p.vx = dir * p.d.spd * .7;
       if (p.t >= a.a0 && p.t <= a.a1) {
         if (a.whiff) { if (!a.shown) { a.shown = true; addText(p.x, p.y - 38, 'ERROU FEIO, ERROU RUDE', '#c080ff'); } }
-        else dealToTargets(playerHitbox(a.range), a.mult * (1 + a.charge * 1.6), { set: p.hitSet, heavy: a.heavy || a.combo === 2 });
+        else {
+          dealToTargets(playerHitbox(a.range), a.mult * (1 + a.charge * 1.6), { set: p.hitSet, heavy: a.heavy || a.last || a.MS.poise > 1.4, impact: a.MS.impact });
+          trail(p, a);
+        }
       }
       if (p.t > a.a1) {
         if (want('roll') && p.onGround) { take(); roll(dir); break; }
@@ -158,7 +218,7 @@ export function updatePlayer(dt: number) {
       }
       if (p.t > 1) p.state = 'idle';
       break;
-    case 'hurt': p.vx *= Math.pow(.02, dt); if (p.t > .32) p.state = 'idle'; break;
+    case 'hurt': p.vx *= Math.pow(.02, dt); if (p.t > (p.stagger ? .55 : .32)) { p.state = 'idle'; p.stagger = false; } break;
     case 'recover': p.vx = 0; if (p.t > .25) p.state = 'idle'; break;
     case 'block': p.vx = dir * p.d.spd * .35; if (!held('special') || p.st <= 0) p.state = 'idle'; break;
     case 'parry': p.vx = 0; if (p.t > .5) p.state = 'idle'; break;
@@ -194,7 +254,8 @@ export function updatePlayer(dt: number) {
   const bounds = G.arenaOn && p.x > L.arena[0] ? [L.arena[0] + 8, L.arena[1] - 8] : null;
   p.fallV = p.vy;
   physics(p, dt, bounds);
-  if (p.onGround && !p.wasGround && p.fallV > 200) dust(p.x, p.y, 6, 12, '#4a4a55');
+  if (p.onGround && !p.wasGround && p.fallV > 200) { dust(p.x, p.y, 6, 12, '#4a4a55'); p.landT = p.fallV > 380 ? .2 : .12; }
+  p.landT = Math.max(0, (p.landT || 0) - dt); p.interactT = Math.max(0, (p.interactT || 0) - dt); p.blockHitT = Math.max(0, (p.blockHitT || 0) - dt);
   p.wasGround = p.onGround;
   if (p.onGround) { p.safeX = p.x; p.safeY = p.y; }
   if (p.y > H + 30) die(true);
@@ -204,32 +265,41 @@ export function playerPose() {
   const p = G.P, s = p.state;
   const o: any = { legA: 0, bob: 0, armA: -.9, flash: p.flash > 0 || (p.iframes > 0 && s === 'hurt' && Math.floor(G.time * 20) % 2 === 0), seed: 1, sway: Math.min(1, Math.abs(p.vx) / 120) };
   if (p.buffT > 0) o.eye = '#d080ff';
-  if (s === 'run') { o.amp = 1; o.ph = p.anim * 12; o.bob = Math.cos(p.anim * 24) > .3 ? 1 : 0; o.armA = -.9 + Math.sin(p.anim * 12) * .15; }
-  else if (s === 'idle') o.bob = Math.sin(G.time * 3) > 0 ? 0 : 1;
-  else if (s === 'air') { o.air = true; o.armA = -1.5; }
+  const sitting = (m: any) => m && (m.fire || (m.parent && m.parent.fire));
+  if (s === 'run') { o.amp = 1; o.ph = p.anim * 12; o.bob = Math.cos(p.anim * 24) > .3 ? 1 : 0; o.armA = -.9 + Math.sin(p.anim * 12) * .15; o.lean = .07; }
+  else if (s === 'idle') {
+    if (sitting(G.menu)) { o.sit = true; o.armA = .5; o.armB = .6; }
+    else { o.bob = Math.sin(G.time * 2.4) > .2 ? 1 : 0; o.armA = -.9 + Math.sin(G.time * 2.4) * .05; }
+  }
+  else if (s === 'air') { o.air = true; if (p.vy > 60) { o.fall = true; o.armA = -2.1; o.armB = -2.4; } else o.armA = -1.5; }
   else if (s === 'roll') o.roll = p.t / .4 * Math.PI * 2;
   else if (s === 'attack') {
-    const a = p.atk;
-    if (a.heavy) {
-      const up = -3.9;
-      o.armA = p.t < a.a0 ? lerp(-.9, up, ease(p.t / a.a0)) : p.t < a.a1 ? lerp(up, -.2, ease((p.t - a.a0) / (a.a1 - a.a0))) : lerp(-.2, -.9, (p.t - a.a1) / (a.dur - a.a1));
-    } else {
-      const w = a.sw;
-      o.armA = p.t < a.a0 ? lerp(w.from, w.up, ease(p.t / a.a0)) : p.t < a.a1 ? lerp(w.up, w.to, ease((p.t - a.a0) / (a.a1 - a.a0))) : lerp(w.to, -.9, (p.t - a.a1) / (a.dur - a.a1));
-    }
-    o.legA = p.t > a.a0 ? (a.combo === 2 ? 2 : 1) : 0;
-    if (a.kind === 'air') o.air = true;
+    const a = p.atk, w = a.sw, lean = w.lean || 0;
+    const up = a.heavy ? w.up : w.up;
+    o.armA = p.t < a.a0 ? lerp(w.from, up, ease(p.t / a.a0)) : p.t < a.a1 ? lerp(up, w.to, ease((p.t - a.a0) / (a.a1 - a.a0))) : lerp(w.to, -.9, (p.t - a.a1) / (a.dur - a.a1));
+    // corpo: recua na preparação, avança no golpe, volta na recuperação
+    o.lean = p.t < a.a0 ? -lean * .4 * (p.t / a.a0) : p.t < a.a1 ? lerp(-lean * .4, lean, (p.t - a.a0) / (a.a1 - a.a0)) : lerp(lean, 0, (p.t - a.a1) / (a.dur - a.a1));
+    o.legA = p.t > a.a0 ? (Math.abs(w.lunge) > 60 ? 2 : 1) : 0;
+    o.bob = p.t > a.a0 && p.t < a.a1 + .08 && (a.heavy || a.MS.impact) ? 1 : 0;
+    o.armB = p.t < a.a0 ? .9 : -.2;
+    if (a.kind === 'air') { o.air = true; o.lean = 0; }
   }
-  else if (s === 'plunge') { o.air = true; o.armA = p.t < .12 ? lerp(-.9, -3.4, p.t / .12) : 0; }
-  else if (s === 'drink') { o.armA = p.t < .6 ? lerp(-.6, -2.6, p.t / .4) : -2.6; o.cup = true; if (p.vx) { o.amp = 1; o.ph = p.anim * 12; p.anim += 1 / 120; } }
-  else if (s === 'hurt') { o.armA = -.3; o.bob = 1; }
-  else if (s === 'recover') { o.armA = -.15; o.bob = 2; }
-  else if (s === 'block') { o.block = true; o.armA = -1.2; o.bob = 1; }
-  else if (s === 'parry') o.armA = p.t < .24 ? -2.3 : -1.2;
-  else if (s === 'dash') { o.armA = -1.6; o.legA = 2; }
-  else if (s === 'slam') o.armA = p.slammed ? -.1 : lerp(-.9, -3.7, p.t / .38);
-  else if (s === 'cast') o.armA = p.t < .22 ? lerp(-.9, -2.2, p.t / .22) : -1.5;
-  else if (s === 'curse') o.armA = -2.9;
-  else if (s === 'dead') o.deadP = Math.min(1, p.t * 3);
+  else if (s === 'plunge') { o.air = true; o.armA = p.t < .12 ? lerp(-.9, -3.4, p.t / .12) : 0; o.lean = .2; }
+  else if (s === 'drink') { o.armA = p.t < .6 ? lerp(-.6, -2.6, p.t / .4) : -2.6; o.cup = true; o.lean = p.t > .5 && p.t < .9 ? -.12 : 0; if (p.vx) { o.amp = 1; o.ph = p.anim * 12; p.anim += 1 / 120; } }
+  else if (s === 'hurt') { o.armA = p.stagger ? .2 : -.3; o.armB = .9; o.bob = p.stagger ? 2 : 1; o.lean = p.stagger ? -.28 : -.14; }
+  else if (s === 'recover') { o.armA = -.15; o.bob = 2; o.lean = .15; }
+  else if (s === 'block') { o.block = true; o.armA = -1.2; o.bob = 1; o.lean = p.blockHitT > 0 ? -.16 : .04; }
+  else if (s === 'parry') { o.armA = p.t < .24 ? -2.3 : -1.2; o.lean = p.t < .24 ? -.08 : 0; }
+  else if (s === 'dash') { o.armA = -1.6; o.legA = 2; o.lean = .25; }
+  else if (s === 'slam') { o.armA = p.slammed ? -.1 : lerp(-.9, -3.7, p.t / .38); o.lean = p.slammed ? .25 : -.1; o.bob = p.slammed ? 2 : 0; }
+  else if (s === 'cast') { o.armA = p.t < .22 ? lerp(-.9, -2.2, p.t / .22) : -1.5; o.lean = p.t < .22 ? -.08 : .12; }
+  else if (s === 'curse') { o.armA = -2.9; o.armB = -2.6; o.lean = -.1; }
+  else if (s === 'dead') {
+    // morte em dois tempos: cai de joelhos, depois tomba
+    if (p.t < .45) { o.bob = 3; o.lean = .3 * (p.t / .45); o.armA = .3; o.armB = .4; }
+    else o.deadP = Math.min(1, (p.t - .45) * 3);
+  }
+  if (p.landT > 0 && (s === 'idle' || s === 'run')) { o.bob = 2; o.lean = .1; }
+  if (p.interactT > 0 && s === 'idle') { o.armA = -1.3; o.bob = 1; o.lean = .1; }
   return o;
 }

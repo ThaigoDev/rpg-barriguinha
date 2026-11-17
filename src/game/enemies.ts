@@ -80,9 +80,10 @@ export function enemyPose(e: any) {
   if (e.state === 'chase' || (e.state === 'idle' && e.vx)) { const ph = Math.sin(G.time * 9 + e.seed); o.legA = Math.round(ph * 1.5); o.bob = Math.abs(ph) > .7 ? 1 : 0; }
   else if (e.state === 'idle') o.bob = Math.sin(G.time * 2 + e.seed) > 0 ? 0 : 1;
   if (e.state === 'wind') o.armA = ranged ? lerp(-1.2, -1.57, e.t / .2) : lerp(-.9, -3.3, ease(e.t / e.wind));
-  if (e.state === 'atk') o.armA = ranged ? -1.57 : lerp(-3.3, -.2, e.t / .12);
+  if (e.state === 'atk') { o.armA = ranged ? -1.57 : lerp(-3.3, -.2, e.t / .12); o.lean = ranged ? -.05 : .14; o.legA = 1; }
+  if (e.state === 'wind' && !ranged) o.lean = -.08;
   if (e.state === 'rec') o.armA = ranged ? -1.4 : lerp(-.2, -.9, e.t / e.rec);
-  if (e.state === 'hurt') { o.armA = -.4; o.bob = 1; }
+  if (e.state === 'hurt') { o.armA = -.4; o.bob = 1; o.lean = -.18; }
   if (e.state === 'stun') { o.armA = -.2; o.bob = 1; }
   if (e.state === 'dead') o.deadP = Math.min(1, e.t * 3);
   return o;

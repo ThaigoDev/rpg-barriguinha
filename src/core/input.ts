@@ -40,7 +40,7 @@ export function initInput(onTap: (gx: number, gy: number) => void, isPlaying: ()
   addEventListener('keydown', e => {
     if (e.target instanceof HTMLInputElement) return;
     audio();
-    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) e.preventDefault();
+    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab', 'F3'].includes(e.code)) e.preventDefault();
     if (!keys[e.code]) pressed[e.code] = true;
     keys[e.code] = true;
   });

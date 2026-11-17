@@ -159,7 +159,7 @@ export function bossPose(b: any) {
     else o.armA = lerp(-.9, m.type === 'leap' ? -3.0 : raise, ease(b.t / b.wd));
   }
   else if (b.state === 'atk') {
-    if (m.type === 'melee') o.armA = lerp(raise, -.1, b.t / .12);
+    if (m.type === 'melee') { o.armA = lerp(raise, -.1, b.t / .12); o.lean = .14; o.legA = 1; }
     else if (m.type === 'leap') o.armA = b.onGround ? -.1 : -3.2;
     else if (m.type === 'dash') { o.armA = -1.4; o.legA = 2; }
     else if (m.type === 'throw') o.armA = lerp(-2.6, -1.0, b.t / .1);
@@ -167,7 +167,7 @@ export function bossPose(b: any) {
     else if (m.type === 'rain') o.armA = -3.0;
   }
   else if (b.state === 'rec') o.armA = lerp(-.1, -.9, b.t / b.rd);
-  else if (b.state === 'stun') { o.armA = -.1; o.bob = 1; }
+  else if (b.state === 'stun') { o.armA = -.1; o.bob = 2; o.lean = -.15; }
   else if (b.state === 'roar') { o.armA = -2.6; o.bob = Math.floor(G.time * 20) % 2; }
   else if (b.state === 'idle' || b.state === 'intro') o.bob = Math.sin(G.time * 1.5) > 0 ? 0 : 1;
   else if (b.state === 'dead') o.deadP = Math.min(1, b.t * 1.5);
