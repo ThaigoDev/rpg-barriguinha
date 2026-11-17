@@ -39,6 +39,7 @@ export function damageEnemy(e: any, mult: number, o: any) {
   addText(e.x, e.y - e.h - 6, String(dmg), tag ? '#ffd84a' : '#ffffff');
   if (tag) addText(e.x, e.y - e.h - 16, tag, '#ffb040');
   SFX.hit(); burst(e.x, e.y - e.h / 2, '#b01020', 7);
+  for (let i = 0; i < 6; i++) part({ x: e.x - Math.sign(e.x - P.x) * e.w * .3, y: e.y - e.h * .55, vx: Math.sign(e.x - P.x) * (60 + Math.random() * 120), vy: (Math.random() - .6) * 120, life: .18 + Math.random() * .12, c: i % 2 ? '#ffffff' : '#ffd27a', g: 0, s: 2 });
   G.hitstop = Math.max(G.hitstop, o.heavy ? .08 : .045);
   if (e.isBoss) {
     e.poise += dmg * (o.heavy ? 1.5 : 1);
@@ -71,7 +72,7 @@ export function hurtPlayer(dmg: number, src: any) {
     if (P.st < 0) { P.st = 0; P.state = 'hurt'; P.t = 0; P.vx = -P.face * 90; addText(P.x, P.y - 36, 'GUARDA QUEBRADA', '#ff8060'); P.iframes = .4; return; }
     dmg *= .12; P.vx = -P.face * 60; P.iframes = .2; if (dmg < 1) return;
   }
-  P.hp -= Math.round(dmg); P.flash = .15; SFX.hurt(); shake(.2, 3); burst(P.x, P.y - 14, '#a01020', 8);
+  P.hp -= Math.round(dmg); P.flash = .15; SFX.hurt(); shake(.25, 3.5); burst(P.x, P.y - 14, '#a01020', 10); G.hurtFlash = .3; G.hitstop = Math.max(G.hitstop, .06);
   if (P.hp <= 0) { die(false); return; }
   if (P.state !== 'block') { P.state = 'hurt'; P.t = 0; P.vx = (src ? Math.sign(P.x - src.x) || -P.face : -P.face) * 110; P.vy = -90; }
   P.iframes = .55;

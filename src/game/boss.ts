@@ -4,7 +4,7 @@ import { GY } from '../core/canvas';
 import { SFX } from '../core/audio';
 import { clamp, lerp, ease, weighted } from '../core/math';
 import { BOSSES, CHARS } from '../data/content';
-import { G, addText, part, shake, dust } from './state';
+import { G, addText, part, shake, dust, glint } from './state';
 import { physics, ov } from './physics';
 import { hurtPlayer, pbox } from './combat';
 import { store } from './save';
@@ -28,6 +28,7 @@ function shockwave(b: any, dirs: number[]) {
 function choose(b: any, id: string) {
   const P = G.P, m = b.B.moves[id], sp = b.phase === 2 ? b.B.p2speed : 1;
   b.state = 'wind'; b.t = 0; b.move = id; b.mv = m; b.face = Math.sign(P.x - b.x) || b.face; b.wd = m.wind / sp; b.hitDone = false;
+  glint(b.x + b.face * b.w * .3, b.y - b.h - 4);
 }
 
 function startMove(b: any) {

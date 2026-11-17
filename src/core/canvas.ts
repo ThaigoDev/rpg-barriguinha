@@ -1,14 +1,15 @@
 // Tela, resolução interna e helpers de desenho em pixel.
-export const W = 480, H = 270, GY = 230; // GY = altura do chão
+export const W = 480, H = 270, GY = 230; // GY = altura do chão (unidades do mundo)
+export const SC = 2; // a tela tem o dobro de pixels: o mundo é 480x270, os sprites e cenários têm 960x540
 export const cv = document.getElementById('c') as HTMLCanvasElement;
 export const ctx = cv.getContext('2d') as CanvasRenderingContext2D;
-cv.width = W; cv.height = H;
+cv.width = W * SC; cv.height = H * SC;
 
 export function resize() {
-  const s = Math.min(innerWidth / W, innerHeight / H);
+  const s = Math.min(innerWidth / (W * SC), innerHeight / (H * SC));
   const k = s >= 2 ? Math.floor(s) : s;
-  cv.style.width = W * k + 'px';
-  cv.style.height = H * k + 'px';
+  cv.style.width = W * SC * k + 'px';
+  cv.style.height = H * SC * k + 'px';
 }
 
 export const FONT = '"Press Start 2P", monospace';

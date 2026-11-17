@@ -1,5 +1,5 @@
 // A Lenda dos Seis: ponto de entrada. Loop principal e cenas de título/seleção.
-import { ctx, resize } from './core/canvas';
+import { ctx, resize, SC } from './core/canvas';
 import { SFX } from './core/audio';
 import { hit, pressed, clearPressed, initInput } from './core/input';
 import { CHARS } from './data/content';
@@ -8,8 +8,7 @@ import { save } from './game/save';
 import { startGame, loadLevel } from './game/level';
 import { killEnemy } from './game/combat';
 import { updateWorld, renderWorld } from './game/world';
-import { drawBG } from './render/background';
-import { drawTitle, drawSelect } from './render/ui';
+import { drawTitle, drawSelect, drawTitleBG } from './render/ui';
 
 G.selIdx = save.sel || 0;
 addEventListener('resize', resize); resize();
@@ -39,9 +38,9 @@ function update(rdt: number) {
 }
 
 function render() {
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
-  if (G.scene === 'title') { drawBG('vila', G.titleCam); drawTitle(); return; }
-  if (G.scene === 'select') { drawBG('vila', G.time * 12); drawSelect(); return; }
+  ctx.setTransform(SC, 0, 0, SC, 0, 0); ctx.imageSmoothingEnabled = false;
+  if (G.scene === 'title') { drawTitleBG(); drawTitle(); return; }
+  if (G.scene === 'select') { drawTitleBG(); drawSelect(); return; }
   renderWorld();
 }
 

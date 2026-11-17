@@ -2,7 +2,7 @@
   {
     "id": "errante", "short": "ERRANTE", "name": "O ERRANTE (VOCÊ)", "title": "O Último da Aliança", "cls": "Cavaleiro Errante",
     "skin": "#d8a882", "skinS": "#b0805e", "hair": "#17110e", "hs": "wavy", "beard": "full",
-    "outfit": "#34353d", "outfitD": "#1c1d23", "pants": "#2a2830", "boots": "#141216", "cape": "#4a1c1c", "trim": "#9a8a6a", "weapon": "sword",
+    "outfit": "#34353d", "outfitD": "#1c1d23", "pants": "#2a2830", "boots": "#141216", "cape": "#4a1c1c", "trim": "#9a8a6a", "weapon": "sword", "armor": true, "blade": "ember",
     "hp": 100, "st": 100, "dmg": 14, "spd": 90,
     "light": { "dur": 0.38, "a0": 0.12, "a1": 0.24, "cost": 14, "range": 24 },
     "special": "parry", "sp": "PARRY [L]",
@@ -42,7 +42,7 @@
   {
     "id": "erik", "short": "ERIK", "name": "ERIK JUCA", "title": "O Último Santo", "cls": "Cavaleiro Guardião",
     "skin": "#d29a7a", "skinS": "#ad7a5e", "hair": "#120d0b", "hs": "bigcurly", "beard": "goatee",
-    "outfit": "#6e1424", "outfitD": "#4a0c18", "pants": "#3a2a2a", "boots": "#1a1212", "cape": "#2a0a10", "trim": "#d4a84a", "shield": "#7a1626", "weapon": "sword",
+    "outfit": "#6e1424", "outfitD": "#4a0c18", "pants": "#3a2a2a", "boots": "#1a1212", "cape": "#2a0a10", "trim": "#d4a84a", "shield": "#7a1626", "weapon": "sword", "armor": true,
     "hp": 135, "st": 100, "dmg": 13, "spd": 82,
     "light": { "dur": 0.4, "a0": 0.14, "a1": 0.26, "cost": 15, "range": 23 },
     "special": "block", "sp": "ESCUDO [segure L]",

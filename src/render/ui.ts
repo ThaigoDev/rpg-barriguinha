@@ -1,18 +1,31 @@
 // HUD, banners, diálogos, menus e telas (título, seleção, morte, vitória).
-import { ctx, R, W, H, GY, txt, wrap, panel, bar } from '../core/canvas';
+import { ctx, R, W, H, GY, SC, txt, wrap, panel, bar } from '../core/canvas';
 import { lerp, ease } from '../core/math';
 import { CHARS, LEVELS } from '../data/content';
 import { G, part } from '../game/state';
 import { charSave } from '../game/save';
 import { levelCost } from '../game/interact';
 import { drawCharAt } from './sprites';
-import { drawFire } from './background';
+import { getArt, drawArtBack, drawArtFront, drawLights } from './art';
+
+// cenário da tela de título/seleção
+export const TITLE_L = { id: 'title', theme: 'vila', width: 1600, gaps: [], plats: [], fires: [{ x: 800 }] };
+const titleCam = () => 560 + Math.sin(G.time * .12) * 24;
+export function drawTitleBG() {
+  const art = getArt(TITLE_L), cam = titleCam();
+  drawArtBack(art, cam);
+  ctx.save(); ctx.setTransform(SC, 0, 0, SC, Math.round(-cam * SC), 0);
+  drawLights(art, TITLE_L.fires, [true]);
+  if (G.scene === 'title') drawCharAt(CHARS[0], 760, GY, 1, { bob: Math.sin(G.time * 3) > 0 ? 0 : 1, armA: -.9, seed: 1 });
+  ctx.restore();
+  drawArtFront(art, cam);
+}
 
 export function drawHUD() {
   const P = G.P, S = G.S, boss = G.boss;
   txt(P.d.short + '  NV ' + S.lv, 8, 6, 8, '#e8dcc0');
   bar(8, 17, Math.round(50 + P.maxhp * .7), 5, P.hp, P.maxhp, '#a01822', P.hpLag);
-  bar(8, 25, Math.round(40 + P.maxst * .6), 3, Math.max(0, P.st), P.maxst, '#2e8a3a');
+  bar(8, 25, Math.round(40 + P.maxst * .6), 3, Math.max(0, P.st), P.maxst, P.stFlash > 0 && Math.floor(G.time * 20) % 2 ? '#d0d040' : '#2e8a3a');
   R('#e8e0d0', 9, 33, 6, 6); R('#5a3418', 10, 33, 4, 1); R('#e8e0d0', 15, 34, 2, 3);
   txt('x' + P.cafe, 20, 33, 8, P.cafe ? '#e8dcc0' : '#7a6a5a');
   if (P.buffT > 0) txt('MALDIÇÃO ' + Math.ceil(P.buffT) + 's', 8, 45, 8, '#c080ff');
@@ -20,7 +33,7 @@ export function drawHUD() {
   R('rgba(0,0,0,.6)', W - 96, 6, 88, 18); R('#5a4a30', W - 96, 23, 88, 1);
   txt('ALMAS', W - 84, 11, 8, '#7a8a9a'); txt(String(S.souls), W - 14, 11, 8, '#e8dcc0', 'right'); R('#9fd8ff', W - 90, 13, 3, 3);
   if (boss && G.arenaOn && boss.state !== 'dead') { txt(boss.name, W / 2 - 150, H - 34, 8, '#e8dcc0'); bar(W / 2 - 150, H - 22, 300, 5, boss.hp, boss.maxhp, '#8a1420'); }
-  if (G.hintT > 0 && !G.arenaOn) { ctx.globalAlpha = Math.min(1, G.hintT); txt('J leve  K forte  L especial  SHIFT rola  Q café  E usa', W / 2, 62, 8, '#c8b898', 'center'); ctx.globalAlpha = 1; }
+  if (G.hintT > 0 && !G.arenaOn) { ctx.globalAlpha = Math.min(1, G.hintT); txt('J leve (combo)  K forte (segure)  L especial  SHIFT rola', W / 2, 62, 8, '#c8b898', 'center'); txt('No ar: J corte aéreo, K ataque em queda  ·  Q café  E usa', W / 2, 74, 8, '#a89878', 'center'); ctx.globalAlpha = 1; }
 }
 
 export function drawBanner() {
@@ -41,7 +54,7 @@ export function drawDialog() {
 
 export function drawMenu() {
   const m = G.menu, S = G.S;
-  const w = m.level ? 300 : 230, h = m.level ? 150 : m.pause ? 150 : 30 + m.opts.length * 16 + 10, x = (W - w) / 2, y = m.level ? 60 : 70;
+  const w = m.level ? 300 : m.pause ? 350 : 230, h = m.level ? 150 : m.pause ? 150 : 30 + m.opts.length * 16 + 10, x = (W - w) / 2, y = m.level ? 60 : 70;
   panel(x, y, w, h); txt(m.title, W / 2, y + 10, 8, '#e0b070', 'center');
   let oy = y + 30;
   if (m.level) {
@@ -50,7 +63,7 @@ export function drawMenu() {
   }
   m.opts.forEach((o: any, i: number) => txt((i === m.idx ? '▶ ' : '  ') + o.label, x + 14, oy + i * 16, 8, i === m.idx ? '#ffe0a0' : '#a89878'));
   if (m.level && m.msg) txt(m.msg, W / 2, y + h - 16, 8, '#ffd27a', 'center');
-  if (m.pause) ['A/D ←→ mover   W/↑/ESPAÇO pular', '↓ + pular: descer da plataforma', 'SHIFT rolar   J leve   K forte', 'L especial   Q café   E interagir'].forEach((l, i) => txt(l, x + 10, y + 76 + i * 12, 8, '#8a7a5a'));
+  if (m.pause) ['A/D mover  ESPAÇO pular (segure = mais alto)', 'SHIFT rolar  J combo  K forte (segure)', 'No ar: J corte  K ataque em queda', 'L especial  Q café  E interagir'].forEach((l, i) => txt(l, x + 10, y + 76 + i * 12, 8, '#8a7a5a'));
 }
 
 export function drawDeath() {
@@ -72,16 +85,11 @@ export function drawVictory() {
 }
 
 export function drawTitle() {
-  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(0, 0, W, H); R('#17120e', 0, GY, W, H - GY);
-  drawCharAt(CHARS[0], W / 2 - 50, GY, 1, { bob: Math.sin(G.time * 3) > 0 ? 0 : 1, armA: -.9, seed: 1 });
-  drawFire(W / 2, true);
-  txt('A LENDA', W / 2, 46, 24, '#e8dcc0', 'center'); txt('DOS SEIS', W / 2, 78, 24, '#e8dcc0', 'center');
-  txt('um soulslike de Neversk', W / 2, 112, 8, '#b8a888', 'center');
-  txt('Capítulo 1: Vila dos Esquecidos  ·  Capítulo 2: Floresta', W / 2, 126, 8, '#8a7a5a', 'center');
-  if (Math.floor(G.time * 2) % 2) txt('Aperte ENTER', W / 2, 160, 8, '#ffe0a0', 'center');
-  if (Math.random() < .3) part({ x: W / 2 + (Math.random() - .5) * 8, y: GY - 8, vx: (Math.random() - .5) * 10, vy: -25, life: 1.2, c: '#ffa040', g: -5 });
-  for (const p of G.parts) { p.x += p.vx / 60; p.y += p.vy / 60; p.life -= 1 / 60; ctx.globalAlpha = Math.max(0, p.life / p.max); R(p.c, Math.round(p.x), Math.round(p.y), 1, 1); }
-  ctx.globalAlpha = 1; G.parts = G.parts.filter((p: any) => p.life > 0);
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(0, 0, W, H);
+  txt('A LENDA', W / 2, 40, 24, '#e8dcc0', 'center'); txt('DOS SEIS', W / 2, 72, 24, '#e8dcc0', 'center');
+  txt('um soulslike de Neversk', W / 2, 106, 8, '#b8a888', 'center');
+  txt('Capítulo 1: Vila dos Esquecidos  ·  Capítulo 2: Floresta', W / 2, 120, 8, '#8a7a5a', 'center');
+  if (Math.floor(G.time * 2) % 2) txt('Aperte ENTER', W / 2, 150, 8, '#ffe0a0', 'center');
 }
 
 export function drawSelect() {

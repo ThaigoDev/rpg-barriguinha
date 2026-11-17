@@ -4,7 +4,7 @@ import { H } from '../core/canvas';
 import { SFX } from '../core/audio';
 import { lerp, ease } from '../core/math';
 import { ENEMY_TYPES, LOOKS } from '../data/content';
-import { G, addText } from './state';
+import { G, addText, glint } from './state';
 import { physics, edgeAhead, ov, ebox } from './physics';
 import { hurtPlayer, pbox } from './combat';
 
@@ -41,9 +41,9 @@ export function updateEnemy(e: any, dt: number) {
         if (adx < e.keep) move(-e.face, e.spd); // recua
         else if (adx > e.range) move(e.face, e.spd);
         else e.vx = 0;
-        if (adx <= e.range && adx > 24 && dy < 60 && e.t > .4) { e.state = 'wind'; e.t = 0; e.vx = 0; }
-        else if (adx <= 24 && e.t > .6) { e.state = 'wind'; e.t = 0; e.vx = 0; } // encurralado: atira mesmo assim
-      } else if (adx <= e.range && dy < 30) { e.state = 'wind'; e.t = 0; e.vx = 0; }
+        if (adx <= e.range && adx > 24 && dy < 60 && e.t > .4) { e.state = 'wind'; e.t = 0; e.vx = 0; glint(e.x + e.face * 8, e.y - 16); }
+        else if (adx <= 24 && e.t > .6) { e.state = 'wind'; e.t = 0; e.vx = 0; glint(e.x + e.face * 8, e.y - 16); } // encurralado: atira mesmo assim
+      } else if (adx <= e.range && dy < 30) { e.state = 'wind'; e.t = 0; e.vx = 0; glint(e.x + e.face * (e.kind === 'lunger' ? 10 : 4), e.y - (e.kind === 'lunger' ? 12 : 30)); }
       else move(e.face, e.spd);
       break;
     case 'wind':
@@ -69,6 +69,7 @@ export function updateEnemy(e: any, dt: number) {
     case 'hurt': e.vx *= Math.pow(.01, dt); if (edgeAhead(e, Math.sign(e.vx))) e.vx = 0; if (e.t > .3) { e.state = 'chase'; e.t = 0; } break;
     case 'stun': e.vx = 0; if (e.t > 1.3) { e.state = 'chase'; e.t = 0; } break;
   }
+  for (const o of G.enemies) if (o !== e && o.state !== 'dead' && Math.abs(o.x - e.x) < 9 && Math.abs(o.y - e.y) < 10) e.x += (e.x < o.x ? -1 : 1) * 20 * dt;
   physics(e, dt, [12, G.L.arena[0] - 14]);
   if (e.y > H + 30) { e.state = 'dead'; e.t = 1; e.alpha = 0; } // caiu no buraco
 }
