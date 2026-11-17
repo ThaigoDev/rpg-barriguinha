@@ -1,0 +1,62 @@
+[
+  {
+    "id": "errante", "short": "ERRANTE", "name": "O ERRANTE (VOCÊ)", "title": "O Último da Aliança", "cls": "Cavaleiro Errante",
+    "skin": "#d8a882", "skinS": "#b0805e", "hair": "#17110e", "hs": "wavy", "beard": "full",
+    "outfit": "#34353d", "outfitD": "#1c1d23", "pants": "#2a2830", "boots": "#141216", "cape": "#4a1c1c", "trim": "#9a8a6a", "weapon": "sword",
+    "hp": 100, "st": 100, "dmg": 14, "spd": 90,
+    "light": { "dur": 0.38, "a0": 0.12, "a1": 0.24, "cost": 14, "range": 24 },
+    "special": "parry", "sp": "PARRY [L]",
+    "spDesc": "Aperte no instante do golpe inimigo: atordoa e o próximo ataque causa dano triplo.",
+    "tag": "Último sobrevivente da aliança. Ninguém sabe como. Nem ele."
+  },
+  {
+    "id": "alefloki", "short": "ALEFLOKI", "name": "ALEFLOKI LUCAS", "title": "O Caçador de Neversk", "cls": "Caçador Ágil",
+    "skin": "#a8704e", "skinS": "#84553a", "hair": "#120d0b", "hs": "straight", "beard": "mustache",
+    "outfit": "#22304a", "outfitD": "#141c2e", "pants": "#1c2236", "boots": "#101420", "cape": "#24321f", "chain": "#d8b45a", "weapon": "daggers",
+    "hp": 85, "st": 110, "dmg": 9, "spd": 108,
+    "light": { "dur": 0.24, "a0": 0.06, "a1": 0.15, "cost": 10, "range": 17 },
+    "special": "dash", "sp": "INVESTIDA [L]",
+    "spDesc": "Avança como um raio, invulnerável, cortando tudo no caminho.",
+    "tag": "Ataca rápido. Some mais rápido ainda na hora de rachar a conta."
+  },
+  {
+    "id": "davi", "short": "DAVI", "name": "DAVI DONEVISK", "title": "O Carrasco", "cls": "Bárbaro",
+    "skin": "#c99272", "skinS": "#a2725a", "hair": "#110c0a", "hs": "shortcurly", "beard": "stubble",
+    "outfit": "#232326", "outfitD": "#141416", "pants": "#2e2a26", "boots": "#18140f", "cape": "#3a2a1a", "pendant": "#dcdcdc", "weapon": "axe",
+    "hp": 125, "st": 95, "dmg": 22, "spd": 78,
+    "light": { "dur": 0.55, "a0": 0.24, "a1": 0.36, "cost": 20, "range": 30 },
+    "special": "slam", "sp": "TERREMOTO [L]",
+    "spDesc": "Pancada no chão que acerta todo mundo em volta. Se estiver no ar, despenca.",
+    "tag": "Resolve tudo na força. Inclusive porta que era de puxar."
+  },
+  {
+    "id": "josias", "short": "JOSIAS", "name": "JOSIAS NEVISK", "title": "O Necromante", "cls": "Mago Proibido",
+    "skin": "#9a6444", "skinS": "#784a32", "hair": "#0f0b09", "hs": "shortcurly", "beard": "goatee", "glasses": true, "bracelet": true, "robe": true,
+    "outfit": "#1c1c26", "outfitD": "#0e0e14", "pants": "#1c1c26", "boots": "#100f14", "cape": "#2e2140", "trim": "#c9a24a", "weapon": "staff",
+    "hp": 80, "st": 100, "dmg": 9, "spd": 88,
+    "light": { "dur": 0.42, "a0": 0.15, "a1": 0.27, "cost": 13, "range": 26 },
+    "special": "cast", "sp": "BOLA DE FOGO [L]",
+    "spDesc": "Arremessa fogo de um grimório que ninguém devia ter lido.",
+    "tag": "Leu o grimório proibido. E o manual. Único do grupo que lê manual."
+  },
+  {
+    "id": "erik", "short": "ERIK", "name": "ERIK JUCA", "title": "O Último Santo", "cls": "Cavaleiro Guardião",
+    "skin": "#d29a7a", "skinS": "#ad7a5e", "hair": "#120d0b", "hs": "bigcurly", "beard": "goatee",
+    "outfit": "#6e1424", "outfitD": "#4a0c18", "pants": "#3a2a2a", "boots": "#1a1212", "cape": "#2a0a10", "trim": "#d4a84a", "shield": "#7a1626", "weapon": "sword",
+    "hp": 135, "st": 100, "dmg": 13, "spd": 82,
+    "light": { "dur": 0.4, "a0": 0.14, "a1": 0.26, "cost": 15, "range": 23 },
+    "special": "block", "sp": "ESCUDO [segure L]",
+    "spDesc": "Bloqueia quase todo dano frontal, gastando vigor.",
+    "tag": "Defende tudo. Inclusive opinião indefensável."
+  },
+  {
+    "id": "vitao", "short": "VITÃO", "name": "VITÃO OKITONESK", "title": "O Rei Corrompido", "cls": "Amaldiçoado",
+    "skin": "#b47a54", "skinS": "#8a5a3e", "hair": "#100c0a", "hs": "shadow", "beard": "mustache",
+    "outfit": "#1c1820", "outfitD": "#0e0b12", "pants": "#221e28", "boots": "#0c0a0e", "cape": "#3a1a4a", "trim": "#8a5ad0", "weapon": "great",
+    "hp": 100, "st": 100, "dmg": 16, "spd": 92,
+    "light": { "dur": 0.46, "a0": 0.17, "a1": 0.3, "cost": 17, "range": 32 },
+    "special": "curse", "sp": "MALDIÇÃO [L]",
+    "spDesc": "Sacrifica 15% da vida por +60% de dano. Quanto menos vida, mais dano. Às vezes crita... às vezes erra feio.",
+    "tag": "Imprevisível. Ninguém sabe o que ele vai fazer. Principalmente ele."
+  }
+]

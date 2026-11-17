@@ -1,0 +1,60 @@
+{
+  "id": "vila",
+  "name": "VILA DOS ESQUECIDOS",
+  "chapter": "Capítulo 1",
+  "theme": "vila",
+  "width": 4160,
+  "gaps": [],
+  "plats": [
+    { "x": 620, "y": 198, "w": 56 }, { "x": 700, "y": 168, "w": 56 },
+    { "x": 1540, "y": 200, "w": 52 }, { "x": 1620, "y": 172, "w": 52 }, { "x": 1700, "y": 144, "w": 64 },
+    { "x": 2660, "y": 198, "w": 60 }, { "x": 2740, "y": 170, "w": 64 }, { "x": 3000, "y": 200, "w": 50 }
+  ],
+  "spawns": [
+    ["hollow", 430], ["hollow", 560], ["dog", 930], ["hollow", 1100], ["hollow", 1190], ["knight", 1420],
+    ["dog", 1880], ["dog", 1950], ["hollow", 2150], ["knight", 2360], ["hollow", 2500], ["dog", 2840],
+    ["hollow", 2930], ["knight", 3120], ["dog", 3260]
+  ],
+  "fires": [
+    { "x": 100, "name": "FOGUEIRA DA ENTRADA" },
+    { "x": 3440, "name": "FOGUEIRA DO PORTÃO" }
+  ],
+  "msgs": [
+    { "x": 232, "text": "Tente rolar. Sério, rolar resolve." },
+    { "x": 820, "text": "Cuidado: cachorro adiante. Ele não quer carinho." },
+    { "x": 1500, "text": "Tesouro lá em cima. Ou não. Confia." },
+    { "x": 2590, "text": "Aqui jaz alguém que apertou o botão errado." },
+    { "x": 3520, "text": "Chefe à frente. Boa sorte, vai precisar." }
+  ],
+  "items": [
+    { "id": "s1", "x": 728, "y": 168, "type": "souls", "v": 150 },
+    { "id": "cafe", "x": 1732, "y": 144, "type": "cafe" },
+    { "id": "s2", "x": 2772, "y": 170, "type": "souls", "v": 300 },
+    { "id": "s3", "x": 3025, "y": 200, "type": "souls", "v": 100 }
+  ],
+  "npc": {
+    "x": 160, "look": "velhoZe", "name": "VELHO ZÉ DA FOGUEIRA",
+    "intro": [
+      "Ô, forasteiro... você é um dos Seis, né? Dá pra ver pela cara de quem não dorme.",
+      "A aliança se desfez. Cada um foi pra um canto do reino de Neversk... e a corrupção pegou geral.",
+      "Dizem que o Guardião Sem Rosto vigia o fim da vila. Ninguém sabe a cara dele. Literalmente.",
+      "Dica do velho: rola pra desviar, toma o café [Q] quando apertar, e não confia em cachorro caramelo."
+    ],
+    "more": [
+      "Sem café ninguém mata chefe. Isso é ciência.",
+      "O Wi-Fi do reino tá amaldiçoado. Zero barrinha.",
+      "Se morrer, volta aqui. A fogueira não julga. Eu julgo um pouquinho.",
+      "Gasta as almas na fogueira pra subir de nível. Alma guardada é alma perdida.",
+      "Os outros cinco? Ouvi dizer que tão tudo esperando você... de um jeito ou de outro."
+    ]
+  },
+  "arena": [3580, 4140],
+  "boss": "guardiao",
+  "bossX": 3980,
+  "exit": { "x": 4110, "label": "Seguir para a Floresta", "to": "floresta" },
+  "outro": {
+    "title": "FIM DO CAPÍTULO 1",
+    "text": "O Guardião Sem Rosto caiu. Por trás da máscara... não tinha nada. Literalmente sem rosto. O nome era autoexplicativo.\n\nMas um rastro de folhas secas leva à Floresta de Neversk, onde algo caça na escuridão.",
+    "next": "PRÓXIMO: FLORESTA DE NEVERSK"
+  }
+}
