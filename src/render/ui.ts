@@ -3,6 +3,7 @@ import { ctx, R, W, H, GY, SC, txt, wrap, panel, bar } from '../core/canvas';
 import { lerp, ease } from '../core/math';
 import { CHARS, LEVELS } from '../data/content';
 import { isTouch } from '../core/input';
+import { NET, online } from '../net/net';
 import { G, part } from '../game/state';
 import { charSave } from '../game/save';
 import { levelCost } from '../game/interact';
@@ -34,6 +35,12 @@ export function drawHUD() {
   R('rgba(0,0,0,.6)', W - 96, 6, 88, 18); R('#5a4a30', W - 96, 23, 88, 1);
   txt('ALMAS', W - 84, 11, 8, '#7a8a9a'); txt(String(S.souls), W - 14, 11, 8, '#e8dcc0', 'right'); R('#9fd8ff', W - 90, 13, 3, 3);
   if (boss && G.arenaOn && boss.state !== 'dead') { txt(boss.name, W / 2 - 150, H - 34, 8, '#e8dcc0'); bar(W / 2 - 150, H - 22, 300, 5, boss.hp, boss.maxhp, '#8a1420'); }
+  if (online() || NET.status) {
+    const n = NET.remotes.size + 1;
+    const label = NET.status || ((NET.role === 'host' ? 'ANFITRIÃO' : 'CONVIDADO') + ' · SALA ' + NET.code + ' · ' + n + (n > 1 ? ' JOGADORES' : ' JOGADOR'));
+    R('rgba(0,0,0,.55)', W / 2 - 110, 6, 220, 13); txt(label, W / 2, 9, 8, '#9fd8ff', 'center');
+  }
+  if (G.netMsg) { const a = Math.min(1, G.netMsg.t); ctx.globalAlpha = a; R('rgba(0,0,0,.65)', W / 2 - 150, 22, 300, 14); txt(G.netMsg.text, W / 2, 25, 8, '#ffe0a0', 'center'); ctx.globalAlpha = 1; }
   if (G.hintT > 0 && !G.arenaOn) { ctx.globalAlpha = Math.min(1, G.hintT); if (isTouch) { txt('ATQ = combo  ·  segure FORTE = carregar  ·  ROLA desvia', W / 2, 62, 8, '#c8b898', 'center'); txt('No ar: ATQ corta, FORTE cai golpeando', W / 2, 74, 8, '#a89878', 'center'); }
     else { txt('J leve (combo)  K forte (segure)  L especial  SHIFT rola', W / 2, 62, 8, '#c8b898', 'center'); txt('No ar: J corte aéreo, K ataque em queda  ·  Q café  E usa', W / 2, 74, 8, '#a89878', 'center'); } ctx.globalAlpha = 1; }
 }
@@ -56,9 +63,9 @@ export function drawDialog() {
 
 export function drawMenu() {
   const m = G.menu, S = G.S;
-  const w = m.level ? 300 : m.pause ? 350 : 230, h = m.level ? 150 : m.pause ? 150 : 30 + m.opts.length * 16 + 10, x = (W - w) / 2, y = m.level ? 60 : 70;
+  const w = m.level ? 300 : m.pause || m.wide ? 350 : 230, h = m.level ? 150 : 30 + m.opts.length * 16 + 10 + (m.pause && !isTouch ? 52 : 0) + (m.sub ? 14 : 0), x = (W - w) / 2, y = m.level ? 60 : 70;
   panel(x, y, w, h); txt(m.title, W / 2, y + 10, 8, '#e0b070', 'center');
-  let oy = y + 30;
+  let oy = y + 30 + (m.sub ? 14 : 0);
   if (m.level) {
     txt('Nível ' + S.lv + '   Almas ' + S.souls, x + 14, oy, 8, '#e8dcc0');
     txt('Custo: ' + levelCost() + ' almas', x + 14, oy + 12, 8, S.souls >= levelCost() ? '#9fd8ff' : '#c06050'); oy += 32;
@@ -66,7 +73,8 @@ export function drawMenu() {
   m._rects = m.opts.map((_: any, i: number) => ({ x: x + 6, y: oy + i * 16 - 4, w: w - 12, h: 16, i }));
   m.opts.forEach((o: any, i: number) => txt((i === m.idx ? '▶ ' : '  ') + o.label, x + 14, oy + i * 16, 8, i === m.idx ? '#ffe0a0' : '#a89878'));
   if (m.level && m.msg) txt(m.msg, W / 2, y + h - 16, 8, '#ffd27a', 'center');
-  if (m.pause && !isTouch) ['A/D mover  ESPAÇO pular (segure = mais alto)', 'SHIFT rolar  J combo  K forte (segure)', 'No ar: J corte  K ataque em queda', 'L especial  Q café  E interagir'].forEach((l, i) => txt(l, x + 10, y + 76 + i * 12, 8, '#8a7a5a'));
+  if (m.sub) txt(m.sub, W / 2, y + 22, 8, '#8a7a5a', 'center');
+  if (m.pause && !isTouch) ['A/D mover  ESPAÇO pular (segure = mais alto)', 'SHIFT rolar  J combo  K forte (segure)', 'No ar: J corte  K ataque em queda', 'L especial  Q café  E interagir'].forEach((l, i) => txt(l, x + 10, y + 36 + m.opts.length * 16 + i * 12, 8, '#8a7a5a'));
 }
 
 export function drawDeath() {

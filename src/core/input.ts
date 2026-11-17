@@ -1,6 +1,7 @@
 // Teclado, controles de toque (analógico + botões) e toque/clique no canvas.
 import { audio } from './audio';
 import { cv, W, H } from './canvas';
+import { applyButtonIcons } from '../render/icons';
 
 export const keys: Record<string, boolean> = {};
 export const pressed: Record<string, boolean> = {};
@@ -37,6 +38,7 @@ function toCanvas(e: PointerEvent): [number, number] {
 
 export function initInput(onTap: (gx: number, gy: number) => void, isPlaying: () => boolean) {
   addEventListener('keydown', e => {
+    if (e.target instanceof HTMLInputElement) return;
     audio();
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) e.preventDefault();
     if (!keys[e.code]) pressed[e.code] = true;
@@ -48,6 +50,7 @@ export function initInput(onTap: (gx: number, gy: number) => void, isPlaying: ()
   document.addEventListener('gesturestart', e => e.preventDefault());
 
   if (isTouch) document.getElementById('touch')?.classList.add('on');
+  applyButtonIcons();
 
   // botões
   document.querySelectorAll<HTMLElement>('.tb[data-k]').forEach(b => {

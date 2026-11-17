@@ -6,11 +6,46 @@ import { CHARS } from './data/content';
 import { G } from './game/state';
 import { save } from './game/save';
 import { startGame, loadLevel } from './game/level';
+import './game/coop';
+import { hostRoom, joinRoom } from './net/net';
+import { updateMenu } from './game/interact';
+import { drawMenu } from './render/ui';
 import { killEnemy } from './game/combat';
 import { updateWorld, renderWorld } from './game/world';
 import { drawTitle, drawSelect, drawTitleBG } from './render/ui';
 
 G.selIdx = save.sel || 0;
+const inv = /^#sala-([A-Za-z0-9]{4})$/.exec(location.hash);
+if (inv) G.invite = inv[1].toUpperCase();
+
+// ---- caixa de digitar o código da sala ----
+const jb = document.getElementById('joinBox')!, jc = document.getElementById('joinCode') as HTMLInputElement, je = document.getElementById('joinErr')!;
+let joinCb: ((code: string | null) => void) | null = null;
+function askCode(cb: (code: string | null) => void) {
+  joinCb = cb; je.textContent = ''; jc.value = ''; jb.classList.add('on'); setTimeout(() => jc.focus(), 50);
+}
+function closeJoin(code: string | null) { jb.classList.remove('on'); jc.blur(); const cb = joinCb; joinCb = null; cb?.(code); }
+document.getElementById('joinOk')!.addEventListener('click', () => {
+  const c = jc.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (c.length !== 4) { je.textContent = 'O código tem 4 letras/números'; return; }
+  closeJoin(c);
+});
+document.getElementById('joinCancel')!.addEventListener('click', () => closeJoin(null));
+jc.addEventListener('keydown', e => { if (e.key === 'Enter') (document.getElementById('joinOk') as HTMLButtonElement).click(); if (e.key === 'Escape') closeJoin(null); });
+
+function modeMenu(ci: number) {
+  const opts: any[] = [];
+  if (G.invite) opts.push({ label: 'Entrar na sala ' + G.invite + ' (convite)', fn: () => { const c = G.invite; G.invite = null; G.menu = null; startOnline(ci, c); } });
+  opts.push(
+    { label: 'Jogar sozinho', fn: () => { G.menu = null; startGame(ci); } },
+    { label: 'Criar sala online', fn: () => { G.menu = null; startGame(ci); hostRoom(); } },
+    { label: 'Entrar numa sala', fn: () => { G.menu = null; askCode(c => { if (c) startOnline(ci, c); }); } },
+    { label: 'Voltar', fn: () => { G.menu = null; } },
+  );
+  G.menu = { title: CHARS[ci].short + ': COMO JOGAR?', sub: 'Online: cooperativo, até 6 amigos', idx: 0, wide: true, opts };
+}
+function startOnline(ci: number, code: string) { joinRoom(code); startGame(ci); }
+
 addEventListener('resize', resize); resize();
 
 initInput((gx, gy) => {
@@ -36,10 +71,12 @@ const btnE = document.getElementById('btnE');
 function update(rdt: number) {
   if (G.scene === 'title') { G.titleCam += rdt * 18; if (hit('confirm')) { SFX.blip(); G.scene = 'select'; } return; }
   if (G.scene === 'select') {
+    if (jb.classList.contains('on')) return;
+    if (G.menu) { updateMenu(); return; }
     const n = CHARS.length;
     if (hit('left')) { G.selIdx = (G.selIdx + n - 1) % n; SFX.blip(); }
     if (hit('right')) { G.selIdx = (G.selIdx + 1) % n; SFX.blip(); }
-    if (hit('confirm')) { SFX.blip(); startGame(G.selIdx); }
+    if (hit('confirm')) { SFX.blip(); modeMenu(G.selIdx); }
     if (hit('back')) G.scene = 'title';
     return;
   }
@@ -49,7 +86,7 @@ function update(rdt: number) {
 function render() {
   ctx.setTransform(SC, 0, 0, SC, 0, 0); ctx.imageSmoothingEnabled = false;
   if (G.scene === 'title') { drawTitleBG(); drawTitle(); return; }
-  if (G.scene === 'select') { drawTitleBG(); drawSelect(); return; }
+  if (G.scene === 'select') { drawTitleBG(); drawSelect(); if (G.menu) drawMenu(); return; }
   renderWorld();
 }
 

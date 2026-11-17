@@ -7,6 +7,7 @@ import { G, addText } from './state';
 import { store } from './save';
 import { applyStats } from './player';
 import { respawnAll, loadLevel } from './level';
+import { NET, isGuest, online, leave, inviteLink } from '../net/net';
 
 export function findNear() {
   const P = G.P, L = G.L, LS = G.LS;
@@ -30,6 +31,7 @@ export function interact(n: any) {
     G.npcTalked[L.id] = true;
   } else if (n.type === 'msg') G.dialog = { who: 'MENSAGEM NO CHÃO', lines: [n.m.text], i: 0 };
   else if (n.type === 'exit') {
+    if (L.exit.to && isGuest()) { addText(P.x, P.y - 36, 'Só o anfitrião pode seguir viagem', '#9fd8ff'); return; }
     if (L.exit.to) { loadLevel(L.exit.to, 0); return; }
     G.dialog = { who: 'CAMINHO BLOQUEADO', lines: ['Uma névoa densa cobre a passagem. Esse capítulo ainda está sendo escrito... (em breve)'], i: 0 };
   }
@@ -50,7 +52,7 @@ function bonfireMenu(i: number) {
     { label: 'Descansar', fn: () => { G.LS.fire = i; respawnAll(); store(); G.menu = null; addText(G.P.x, G.P.y - 36, 'DESCANSOU', '#ffd08a'); SFX.bonfire(); } },
     { label: 'Subir de nível', fn: () => { G.menu = levelMenu(G.menu); } },
   ];
-  if (LEVEL_ORDER.filter(unlocked).length > 1) opts.push({ label: 'Viajar', fn: () => { G.menu = travelMenu(G.menu); } });
+  if (!isGuest() && LEVEL_ORDER.filter(unlocked).length > 1) opts.push({ label: 'Viajar', fn: () => { G.menu = travelMenu(G.menu); } });
   opts.push({ label: 'Sair', fn: () => { G.menu = null; } });
   G.menu = { title: G.L.fires[i].name, idx: 0, opts };
 }
@@ -86,12 +88,19 @@ function travelMenu(parent: any) {
 }
 
 export function pauseMenu() {
-  G.menu = {
-    title: 'PAUSADO', idx: 0, pause: true, opts: [
-      { label: 'Continuar', fn: () => { G.menu = null; } },
-      { label: 'Trocar personagem', fn: () => { store(); G.menu = null; G.scene = 'select'; } },
-    ],
-  };
+  const opts: any[] = [{ label: 'Continuar', fn: () => { G.menu = null; } }];
+  if (online()) {
+    opts.push({ label: 'Copiar convite (sala ' + NET.code + ')', fn: () => copyInvite() });
+    opts.push({ label: 'Sair da sala', fn: () => { const g = isGuest(); leave(); G.menu = null; if (g) NET.hooks.backToSolo?.(); G.netMsg = { text: 'Você saiu da sala.', t: 3 }; } });
+  }
+  opts.push({ label: 'Trocar personagem', fn: () => { store(); leave(); G.menu = null; G.scene = 'select'; } });
+  G.menu = { title: 'PAUSADO', idx: 0, pause: true, opts };
+}
+
+function copyInvite() {
+  const link = inviteLink();
+  const done = (ok: boolean) => { G.netMsg = { text: ok ? 'Convite copiado! Cole no zap dos amigos.' : 'Código da sala: ' + NET.code, t: 4 }; };
+  try { navigator.clipboard.writeText(link).then(() => done(true), () => done(false)); } catch (e) { done(false); }
 }
 
 export function updateMenu() {

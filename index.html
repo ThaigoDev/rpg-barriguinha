@@ -24,13 +24,24 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;background:#000;dis
 .tb{--s:15vmin;position:absolute;pointer-events:auto;width:var(--s);height:var(--s);border-radius:50%;background:rgba(20,14,10,.35);border:2px solid rgba(255,210,140,.4);color:#f3d9a4;font:calc(var(--s) * .17) "Press Start 2P",monospace;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3;text-shadow:0 1px 0 #000;box-sizing:border-box}
 .tb.act{background:rgba(255,170,80,.4);transform:scale(.94)}
 .tb.big{--s:22vmin;border-width:3px}
-.tb.sm{--s:10vmin;font:calc(var(--s) * .5) system-ui,sans-serif}
+.tb.sm{--s:10vmin}
+.tb{flex-direction:column}
+.tb .ic{width:52%;height:52%;image-rendering:pixelated;filter:drop-shadow(0 1px 0 #000)}
+.tb.sm .ic{width:60%;height:60%}
+.tb .lb{font:calc(var(--s) * .1) "Press Start 2P",monospace;margin-top:4%;opacity:.85}
 .tb.hot{border-color:#ffe0a0;box-shadow:0 0 3vmin rgba(255,200,100,.7);animation:pulse 1s infinite}
 @keyframes pulse{50%{box-shadow:0 0 1vmin rgba(255,200,100,.3)}}
 #rotate{position:fixed;inset:0;z-index:5;background:#05060c;color:#e8dcc0;display:none;flex-direction:column;align-items:center;justify-content:center;font:12px "Press Start 2P",monospace;text-align:center;line-height:1.8;padding:20px;box-sizing:border-box}
 #rotate .ic{font-size:64px;animation:rot 2s ease-in-out infinite;margin-bottom:24px}
 @keyframes rot{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
 @media (orientation:portrait) and (pointer:coarse){#rotate{display:flex}}
+#joinBox{position:fixed;inset:0;z-index:4;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
+#joinBox.on{display:flex}
+#joinBox .pn{background:#08060c;border:2px solid #6a5a3a;padding:22px 26px;text-align:center;color:#e0b070;font:12px "Press Start 2P",monospace;box-shadow:0 0 0 2px #000}
+#joinBox input{display:block;margin:16px auto;width:7.5em;text-align:center;font:28px "Press Start 2P",monospace;letter-spacing:.2em;text-transform:uppercase;background:#140f0a;color:#ffe0a0;border:2px solid #a08a5a;padding:10px 6px;outline:none}
+#joinBox button{font:11px "Press Start 2P",monospace;margin:4px 6px;padding:12px 14px;background:#2a1e12;color:#ffe0a0;border:2px solid #a08a5a;cursor:pointer}
+#joinBox button.sec{background:#120e0a;color:#a89878;border-color:#4a3e2e}
+#joinBox .err{color:#ff8060;font-size:9px;min-height:12px;margin-top:8px}
 </style>
 </head>
 <body>
@@ -39,16 +50,17 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;background:#000;dis
   <div id="stickHint"></div>
   <div id="stickZone"></div>
   <div id="stick"><div id="knob"></div></div>
-  <div class="tb big" data-k="KeyJ" style="right:calc(6vmin + env(safe-area-inset-right));bottom:8vmin">ATQ</div>
-  <div class="tb" data-k="KeyK" style="--s:16vmin;right:calc(31vmin + env(safe-area-inset-right));bottom:4vmin">FORTE</div>
-  <div class="tb" data-k="Space" style="--s:16vmin;right:calc(8vmin + env(safe-area-inset-right));bottom:33vmin">PULO</div>
-  <div class="tb" data-k="ShiftLeft" style="right:calc(29vmin + env(safe-area-inset-right));bottom:23vmin">ROLA</div>
-  <div class="tb" data-k="KeyL" style="--s:14vmin;right:calc(49vmin + env(safe-area-inset-right));bottom:10vmin">ESP</div>
-  <div class="tb" data-k="KeyQ" style="--s:12vmin;right:calc(28vmin + env(safe-area-inset-right));bottom:41vmin">CAFÉ</div>
-  <div class="tb" id="btnE" data-k="KeyE" style="--s:12vmin;right:calc(7vmin + env(safe-area-inset-right));bottom:53vmin">USAR</div>
-  <div class="tb sm" data-k="Escape" style="right:calc(4vmin + env(safe-area-inset-right));top:4vmin">☰</div>
-  <div class="tb sm" id="fsBtn" style="left:calc(4vmin + env(safe-area-inset-left));top:4vmin">⛶</div>
+  <div class="tb big" data-k="KeyJ" style="right:calc(6vmin + env(safe-area-inset-right));bottom:8vmin" data-icon="sword" data-label="ATQ"></div>
+  <div class="tb" data-k="KeyK" style="--s:16vmin;right:calc(31vmin + env(safe-area-inset-right));bottom:4vmin" data-icon="hammer" data-label="FORTE"></div>
+  <div class="tb" data-k="Space" style="--s:16vmin;right:calc(8vmin + env(safe-area-inset-right));bottom:33vmin" data-icon="jump" data-label="PULO"></div>
+  <div class="tb" data-k="ShiftLeft" style="right:calc(29vmin + env(safe-area-inset-right));bottom:23vmin" data-icon="roll" data-label="ROLA"></div>
+  <div class="tb" data-k="KeyL" style="--s:14vmin;right:calc(49vmin + env(safe-area-inset-right));bottom:10vmin" data-icon="parry" data-label="ESP"></div>
+  <div class="tb" data-k="KeyQ" style="--s:12vmin;right:calc(28vmin + env(safe-area-inset-right));bottom:41vmin" data-icon="cup" data-label="CAFÉ"></div>
+  <div class="tb" id="btnE" data-k="KeyE" style="--s:12vmin;right:calc(7vmin + env(safe-area-inset-right));bottom:53vmin" data-icon="hand" data-label="USAR"></div>
+  <div class="tb sm" data-k="Escape" style="right:calc(4vmin + env(safe-area-inset-right));top:4vmin" data-icon="menu"></div>
+  <div class="tb sm" id="fsBtn" style="left:calc(4vmin + env(safe-area-inset-left));top:4vmin" data-icon="full"></div>
 </div>
+<div id="joinBox"><div class="pn">CÓDIGO DA SALA<input id="joinCode" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text"><button id="joinOk">ENTRAR</button><button id="joinCancel" class="sec">VOLTAR</button><div class="err" id="joinErr"></div></div></div>
 <div id="rotate"><div class="ic">📱</div><p>Gire o celular<br>para jogar na horizontal</p></div>
 <script type="module" src="/src/main.ts"></script>
 </body>

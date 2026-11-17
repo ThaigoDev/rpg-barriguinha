@@ -4,7 +4,7 @@ Soulslike 2D em pixel art, jogado direto no navegador. Dark Souls com humor bras
 
 ## Jogar
 
-- **Online:** GitHub Pages (publicado automaticamente a cada push na `main`).
+- **Online:** publicado na Vercel a cada push na `main` (build `npm run build`, pasta `dist`).
 - **Offline:** rode `npm run build` e abra `dist/index.html` direto no navegador. É um arquivo só, com tudo embutido.
 
 | Tecla | Ação |
@@ -26,6 +26,22 @@ Soulslike 2D em pixel art, jogado direto no navegador. Dark Souls com humor bras
 - Menus, diálogos e seleção de personagem funcionam com toque.
 - **⛶** liga a tela cheia (no Android também trava na horizontal). No iPhone, use *Compartilhar → Adicionar à Tela de Início* para abrir em tela cheia.
 - Em pé, o jogo pausa e pede para girar o celular.
+
+## Online (cooperativo)
+
+Até 6 amigos na mesma fase, cada um com seu personagem.
+
+1. Escolha o personagem → **Criar sala online**. Aparece um código de 4 letras (ex.: `K7QD`).
+2. Na pausa, **Copiar convite** gera um link do tipo `https://seu-site/#sala-K7QD`. Quem abrir o link já cai na opção de entrar.
+3. Os amigos escolhem o personagem → **Entrar numa sala** → digitam o código.
+
+Como funciona: conexão direta entre os navegadores (WebRTC, biblioteca PeerJS), sem servidor próprio e sem conta. O anfitrião
+simula inimigos e chefes e manda o estado do mundo ~15x por segundo; cada convidado controla o próprio personagem e avisa quando
+acerta alguém. Almas de inimigos mortos vão para todos; só o anfitrião troca de fase. Se o anfitrião morrer, o mundo reinicia na
+fogueira como no modo solo.
+
+- A sinalização usa o servidor público gratuito do PeerJS. Para usar um servidor próprio: `?peer=host:porta` na URL.
+- Algumas redes móveis muito restritas podem impedir a conexão direta; se acontecer, tente outra rede (Wi-Fi).
 
 ## Conteúdo
 

@@ -6,6 +6,7 @@ import { G, addText, burst, part, shake } from './state';
 import { ov, ebox } from './physics';
 import { store } from './save';
 import { bossDefeated } from './boss';
+import { NET, isGuest, isHost, toHost, broadcast } from '../net/net';
 
 export const pbox = () => {
   const P = G.P;
@@ -35,24 +36,42 @@ export function damageEnemy(e: any, mult: number, o: any) {
   if (P.critNext) { dmg *= 3; P.critNext = false; tag = 'RIPOSTE!'; }
   if (e.armored && !o.heavy && Math.sign(P.x - e.x) === e.face && e.state !== 'stun') { dmg *= .35; tag = tag || 'BLOQUEOU'; SFX.block(); }
   dmg = Math.max(1, Math.round(dmg));
-  e.hp -= dmg; e.flash = .12;
   addText(e.x, e.y - e.h - 6, String(dmg), tag ? '#ffd84a' : '#ffffff');
   if (tag) addText(e.x, e.y - e.h - 16, tag, '#ffb040');
+  hitFx(e, P.x, !!o.heavy);
+  if (isGuest()) { e.flash = .12; toHost({ t: 'hit', eid: e.isBoss ? 'boss' : e.id, dmg, heavy: !!o.heavy, x: P.x }); return; }
+  applyDamage(e, dmg, !!o.heavy, P.x);
+}
+
+function hitFx(e: any, fromX: number, heavy: boolean) {
   SFX.hit(); burst(e.x, e.y - e.h / 2, '#b01020', 7);
-  for (let i = 0; i < 6; i++) part({ x: e.x - Math.sign(e.x - P.x) * e.w * .3, y: e.y - e.h * .55, vx: Math.sign(e.x - P.x) * (60 + Math.random() * 120), vy: (Math.random() - .6) * 120, life: .18 + Math.random() * .12, c: i % 2 ? '#ffffff' : '#ffd27a', g: 0, s: 2 });
-  G.hitstop = Math.max(G.hitstop, o.heavy ? .08 : .045);
+  for (let i = 0; i < 6; i++) part({ x: e.x - Math.sign(e.x - fromX) * e.w * .3, y: e.y - e.h * .55, vx: Math.sign(e.x - fromX) * (60 + Math.random() * 120), vy: (Math.random() - .6) * 120, life: .18 + Math.random() * .12, c: i % 2 ? '#ffffff' : '#ffd27a', g: 0, s: 2 });
+  G.hitstop = Math.max(G.hitstop, heavy ? .08 : .045);
+}
+
+/** Aplica dano de verdade (jogo solo ou anfitrião). fromX = posição de quem bateu. */
+export function applyDamage(e: any, dmg: number, heavy: boolean, fromX: number) {
+  if (e.state === 'dead') return;
+  e.hp -= dmg; e.flash = .12;
   if (e.isBoss) {
-    e.poise += dmg * (o.heavy ? 1.5 : 1);
+    e.poise += dmg * (heavy ? 1.5 : 1);
     if (e.poise >= e.B.poise && e.state !== 'atk') { e.poise = 0; e.state = 'stun'; e.t = 0; addText(e.x, e.y - e.h - 14, 'ATORDOADO', '#ffd84a'); }
-  } else if (!e.armored || o.heavy) {
-    if (e.state !== 'dead') { e.state = 'hurt'; e.t = 0; e.vx = Math.sign(e.x - P.x) * (o.heavy ? 130 : 70); }
-  }
+  } else if (!e.armored || heavy) { e.state = 'hurt'; e.t = 0; e.vx = Math.sign(e.x - fromX) * (heavy ? 130 : 70); }
   if (e.hp <= 0) killEnemy(e);
+}
+
+/** Golpe de um convidado chegando no anfitrião. */
+export function remoteHit(m: any) {
+  const e = m.eid === 'boss' ? G.boss : G.enemies.find((x: any) => x.id === m.eid);
+  if (!e || e.state === 'dead' || (e.isBoss && (e.state === 'idle'))) return;
+  burst(e.x, e.y - e.h / 2, '#b01020', 5);
+  applyDamage(e, Math.min(400, m.dmg), m.heavy, m.x);
 }
 
 export function killEnemy(e: any) {
   e.state = 'dead'; e.t = 0; e.hp = 0;
   G.S.souls += e.souls;
+  if (isHost()) broadcast({ t: 'kill', souls: e.souls, x: e.x, y: e.y - e.h });
   addText(e.x, e.y - e.h - 26, '+' + e.souls + ' almas', '#9fd8ff'); SFX.souls();
   for (let i = 0; i < 10; i++) part({ x: e.x, y: e.y - e.h / 2, vx: (Math.random() - .5) * 60, vy: -40 - Math.random() * 60, life: 1, c: '#9fd8ff', g: -20 });
   if (e.isBoss) bossDefeated();
@@ -64,6 +83,7 @@ export function hurtPlayer(dmg: number, src: any) {
   if ((P.state === 'roll' && P.t < .32) || P.state === 'dash') return;
   if (P.state === 'parry' && P.t < .24 && src) {
     src.state = 'stun'; src.t = 0; src.vx = 0; src.hitDone = true; P.critNext = true;
+    if (src.proxy) toHost({ t: 'parry', eid: src.id });
     SFX.parry(); addText(P.x, P.y - 36, 'PARRY!', '#ffe080'); G.hitstop = .14; burst(P.x + P.face * 8, P.y - 16, '#ffe080', 12, 120); P.iframes = .3;
     return;
   }
@@ -88,3 +108,5 @@ export function die(fell: boolean) {
   S.souls = 0; store();
   G.scene = 'dead'; G.deathT = 0; G.deathMsg = pick(fell ? TEXTS.fall : TEXTS.death); G.menu = null; G.dialog = null;
 }
+
+void NET;

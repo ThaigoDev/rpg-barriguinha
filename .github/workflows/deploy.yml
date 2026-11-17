@@ -1,8 +1,7 @@
 name: Publicar no GitHub Pages
 
+# O jogo é publicado pela Vercel. Este workflow só roda manualmente (aba Actions → Run workflow).
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

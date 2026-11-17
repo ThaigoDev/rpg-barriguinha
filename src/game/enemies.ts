@@ -5,8 +5,8 @@ import { SFX } from '../core/audio';
 import { lerp, ease } from '../core/math';
 import { ENEMY_TYPES, LOOKS } from '../data/content';
 import { G, addText, glint } from './state';
-import { physics, edgeAhead, ov, ebox } from './physics';
-import { hurtPlayer, pbox } from './combat';
+import { physics, edgeAhead, ebox } from './physics';
+import { nearestTarget, hitPlayers } from './players';
 
 export function mkEnemy(type: string, x: number, y?: number) {
   const T = ENEMY_TYPES[type];
@@ -18,10 +18,9 @@ function alertPack(e: any) {
 }
 
 export function updateEnemy(e: any, dt: number) {
-  const P = G.P;
   e.t += dt; e.flash = Math.max(0, e.flash - dt);
   if (e.state === 'dead') { e.alpha = Math.max(0, 1 - e.t / .8); e.vx *= .9; physics(e, dt); return; }
-  const dx = P.x - e.x, adx = Math.abs(dx), dy = Math.abs(P.y - e.y), alive = P.state !== 'dead';
+  const T = nearestTarget(e.x, e.y), alive = !!T, dx = T ? T.x - e.x : 0, adx = T ? Math.abs(dx) : 1e9, dy = T ? Math.abs(T.y - e.y) : 1e9;
   const move = (dir: number, spd: number) => { e.vx = edgeAhead(e, dir) ? 0 : dir * spd; };
 
   switch (e.state) {
@@ -50,7 +49,7 @@ export function updateEnemy(e: any, dt: number) {
       e.vx = 0;
       if (e.kind === 'ranged') e.face = Math.sign(dx) || e.face;
       if (e.t >= e.wind) {
-        e.state = 'atk'; e.t = 0; e.hitDone = false;
+        e.state = 'atk'; e.t = 0; e.hitDone = false; e.hitSet = new Set();
         if (e.kind === 'lunger') { e.vx = e.face * 210; e.vy = -140; SFX.bark(); }
         else if (e.kind === 'ranged') { SFX.arrow(); G.projs.push({ type: 'arrow', owner: 'e', x: e.x + e.face * 8, y: e.y - 15, vx: e.face * 210, vy: 0, w: 8, h: 3, dmg: e.dmg, life: 2.2 }); }
         else SFX.swing();
@@ -60,7 +59,7 @@ export function updateEnemy(e: any, dt: number) {
       if (e.kind === 'melee') e.vx = edgeAhead(e, e.face) ? 0 : e.face * 20;
       if (e.kind !== 'ranged' && !e.hitDone) {
         const box = e.kind === 'lunger' ? ebox(e) : { x: e.face > 0 ? e.x : e.x - e.range - 4, y: e.y - 26, w: e.range + 4, h: 26 };
-        if (ov(box, pbox())) { e.hitDone = true; hurtPlayer(e.dmg, e); }
+        if (hitPlayers(box, e.dmg, e, e.hitSet) && e.kind === 'lunger') e.hitDone = true;
       }
       if (e.kind === 'lunger' && e.onGround && e.t > .15) e.vx *= .8;
       if (e.t >= e.atk && e.state === 'atk') { e.state = 'rec'; e.t = 0; }

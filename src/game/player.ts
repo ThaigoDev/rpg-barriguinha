@@ -191,7 +191,7 @@ export function updatePlayer(dt: number) {
       break;
   }
   const L = G.L;
-  const bounds = G.arenaOn ? [L.arena[0] + 8, L.arena[1] - 8] : null;
+  const bounds = G.arenaOn && p.x > L.arena[0] ? [L.arena[0] + 8, L.arena[1] - 8] : null;
   p.fallV = p.vy;
   physics(p, dt, bounds);
   if (p.onGround && !p.wasGround && p.fallV > 200) dust(p.x, p.y, 6, 12, '#4a4a55');

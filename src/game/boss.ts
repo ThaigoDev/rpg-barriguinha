@@ -5,17 +5,19 @@ import { SFX } from '../core/audio';
 import { clamp, lerp, ease, weighted } from '../core/math';
 import { BOSSES, CHARS } from '../data/content';
 import { G, addText, part, shake, dust, glint } from './state';
-import { physics, ov } from './physics';
-import { hurtPlayer, pbox } from './combat';
+import { physics } from './physics';
+import { nearestTarget, hitPlayers, playerTargets, hurtTarget } from './players';
 import { store } from './save';
+import { isHost, broadcast } from '../net/net';
 
+const defCache: Record<string, any> = {};
 export function mkBoss(id: string) {
   const B = BOSSES[id], L = G.L;
   let def = B.look;
   let name = B.name;
   if (B.fromChar) {
     const c = CHARS.find(c => c.id === B.fromChar);
-    def = { ...c, ...B.override };
+    def = defCache[id] || (defCache[id] = { ...c, ...B.override });
     if (G.P.d.id === B.fromChar) name = B.mirrorName;
   }
   return { isBoss: true, id, B, def, name, x: L.bossX, y: GY, vx: 0, vy: 0, face: -1, hp: B.hp, maxhp: B.hp, w: B.w, h: B.h, state: 'idle', t: 0, flash: 0, alpha: 1, poise: 0, phase: 1, move: null, mv: null, hitDone: false, souls: B.souls, combo: 0, wd: .5, rd: .5, next: null };
@@ -26,13 +28,14 @@ function shockwave(b: any, dirs: number[]) {
 }
 
 function choose(b: any, id: string) {
-  const P = G.P, m = b.B.moves[id], sp = b.phase === 2 ? b.B.p2speed : 1;
+  const P = nearestTarget(b.x, b.y) || G.P, m = b.B.moves[id], sp = b.phase === 2 ? b.B.p2speed : 1;
   b.state = 'wind'; b.t = 0; b.move = id; b.mv = m; b.face = Math.sign(P.x - b.x) || b.face; b.wd = m.wind / sp; b.hitDone = false;
   glint(b.x + b.face * b.w * .3, b.y - b.h - 4);
 }
 
 function startMove(b: any) {
-  const P = G.P, m = b.mv;
+  const P = nearestTarget(b.x, b.y) || G.P, m = b.mv;
+  b.hitSet = new Set();
   b.state = 'atk'; b.t = 0; b.hitDone = false;
   switch (m.type) {
     case 'melee':
@@ -61,8 +64,8 @@ function startMove(b: any) {
 }
 
 function runMove(b: any, dt: number) {
-  const P = G.P, m = b.mv, sp = b.phase === 2 ? b.B.p2speed : 1;
-  const strike = (box: any, dmg: number) => { if (!b.hitDone && ov(box, pbox())) { b.hitDone = true; hurtPlayer(dmg, b); } };
+  const P = nearestTarget(b.x, b.y) || G.P, m = b.mv, sp = b.phase === 2 ? b.B.p2speed : 1;
+  const strike = (box: any, dmg: number) => { if (!b.hitDone) hitPlayers(box, dmg, b, b.hitSet); };
   const rec = () => { b.state = 'rec'; b.t = 0; b.rd = m.rec / sp; };
   switch (m.type) {
     case 'melee': {
@@ -78,7 +81,7 @@ function runMove(b: any, dt: number) {
     case 'leap':
       if (b.onGround && b.t > .12) {
         b.vx = 0; SFX.slam(); shake(.45, 7);
-        if (Math.abs(P.x - b.x) < m.radius && P.y > b.y - 34) hurtPlayer(m.dmg, b);
+        for (const t of playerTargets()) if (Math.abs(t.x - b.x) < m.radius && t.y > b.y - 34) hurtTarget(t, m.dmg, b);
         dust(b.x, GY, 20, 80);
         if (b.phase === 2 && m.shockP2) shockwave(b, [-1, 1]);
         rec();
@@ -98,7 +101,7 @@ function runMove(b: any, dt: number) {
 }
 
 export function updateBoss(b: any, dt: number) {
-  const P = G.P, L = G.L, B = b.B;
+  const L = G.L, B = b.B, T = nearestTarget(b.x, b.y), P: any = T || { x: b.x, y: b.y, state: 'dead' };
   b.t += dt; b.flash = Math.max(0, b.flash - dt);
   const sp = b.phase === 2 ? B.p2speed : 1, dx = P.x - b.x, adx = Math.abs(dx);
   if (b.state === 'dead') {
@@ -107,7 +110,7 @@ export function updateBoss(b: any, dt: number) {
     return;
   }
   if (b.state === 'idle') {
-    if (P.x > L.arena[0] + 18 && P.state !== 'dead') {
+    if (playerTargets().some(t => t.x > L.arena[0] + 18)) {
       G.arenaOn = true; b.state = 'intro'; b.t = 0; SFX.boss();
       G.banner = { text: b.name, sub: L.name, t: 0, dur: 2.8 };
     }
@@ -172,6 +175,7 @@ export function bossPose(b: any) {
 }
 
 export function bossDefeated() {
+  if (isHost()) broadcast({ t: 'bossdead' });
   G.LS.bossDead = true; G.arenaOn = false; store(); SFX.victory(); shake(.6, 6);
   G.banner = { text: 'CHEFE AMASSADO', sub: '+' + G.boss.souls + ' almas', t: 0, dur: 4, color: '#ffd27a' };
   G.victT = 0;

@@ -2,31 +2,36 @@
 import { GY, R } from '../core/canvas';
 import { G, part, burst } from './state';
 import { ov, ebox } from './physics';
-import { targets, damageEnemy, hurtPlayer, pbox } from './combat';
+import { targets, damageEnemy } from './combat';
+import { hitPlayers } from './players';
+import { isGuest } from '../net/net';
 
 export function updateProjs(dt: number) {
   for (const p of G.projs) {
     p.life -= dt;
+    if (p.rep) { if (p.type === 'fall' && p.delay > 0) p.delay -= dt; else { p.x += p.vx * dt; p.y += (p.type === 'fall' ? 420 : (p.vy || 0)) * dt; } continue; } // cópia vinda do anfitrião: só visual
     if (p.type === 'fall') {
       if (p.delay > 0) { p.delay -= dt; continue; }
       p.y += 420 * dt;
-      if (ov({ x: p.x - 2, y: p.y, w: 4, h: 10 }, pbox())) { hurtPlayer(p.dmg, null); p.life = 0; }
+      if (hitPlayers({ x: p.x - 2, y: p.y, w: 4, h: 10 }, p.dmg, null)) p.life = 0;
       if (p.y >= GY - 10) { p.life = 0; burst(p.x, GY - 2, '#c8c8d0', 5, 60); }
       continue;
     }
     p.x += p.vx * dt; p.y += (p.vy || 0) * dt;
     if (p.owner === 'p') {
+      if (p.remoteFx) { if (Math.random() < .5) G.parts.push({ x: p.x, y: p.y, vx: 0, vy: -10, life: .3, max: .3, c: '#ffb030', g: 0, s: 1 }); continue; }
       part({ x: p.x, y: p.y + (Math.random() - .5) * 4, vx: -p.vx * .1, vy: -10, life: .3, c: Math.random() < .5 ? '#ffb030' : '#ff6020' });
       for (const e of targets()) if (ov({ x: p.x - 4, y: p.y - 3, w: 8, h: 6 }, ebox(e))) { damageEnemy(e, 2.6, { heavy: true }); p.life = 0; burst(p.x, p.y, '#ffa030', 12, 100); break; }
     } else {
       if (p.type === 'shock' && Math.random() < .7) part({ x: p.x, y: GY - Math.random() * 12, vx: 0, vy: -30, life: .35, c: '#d8c8ff' });
       const box = p.type === 'shock' ? { x: p.x - 5, y: p.y, w: 10, h: 12 } : { x: p.x - p.w / 2, y: p.y - p.h / 2, w: p.w, h: p.h };
-      if (ov(box, pbox())) { hurtPlayer(p.dmg, null); p.life = 0; }
+      if (hitPlayers(box, p.dmg, null)) p.life = 0;
       if (p.type !== 'shock' && p.y > GY) p.life = 0;
     }
     if (p.x < 0 || p.x > G.L.width) p.life = 0;
   }
   G.projs = G.projs.filter((p: any) => p.life > 0);
+  void isGuest;
 }
 
 export function drawProjs() {

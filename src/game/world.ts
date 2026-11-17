@@ -15,6 +15,9 @@ import { respawnAll, loadLevel } from './level';
 import { getArt, drawArtBack, drawArtFront, drawLights } from '../render/art';
 import { drawCharAt, drawDog } from '../render/sprites';
 import { drawHUD, drawBanner, drawDialog, drawMenu, drawDeath, drawVictory } from '../render/ui';
+import { CHARS } from '../data/content';
+import { NET, netTick, isGuest, online } from '../net/net';
+import { guestSmooth } from './coop';
 
 export function updateWorld(rdt: number) {
   const P = G.P, S = G.S, L = G.L, LS = G.LS;
@@ -24,15 +27,20 @@ export function updateWorld(rdt: number) {
     if (hit('back')) { pauseMenu(); return; }
   }
   if (G.scene === 'victory') {
-    if (hit('confirm')) { if (L.exit && L.exit.to) { loadLevel(L.exit.to, 0); G.scene = 'game'; } else G.scene = 'game'; return; }
+    if (hit('confirm')) { if (L.exit && L.exit.to && !isGuest()) { loadLevel(L.exit.to, 0); G.scene = 'game'; } else G.scene = 'game'; return; }
     if (hit('back')) { G.scene = 'game'; return; }
   }
   let dt = rdt; if (G.hitstop > 0) { G.hitstop -= rdt; dt = 0; }
   G.near = G.scene === 'game' ? findNear() : null;
   updatePlayer(dt);
-  for (const e of G.enemies) updateEnemy(e, dt);
-  G.enemies = G.enemies.filter((e: any) => !(e.state === 'dead' && e.t > .9));
-  if (G.boss) { updateBoss(G.boss, dt); if (G.boss.state === 'dead' && G.boss.t > 2.4) G.boss = null; }
+  netTick(rdt);
+  if (isGuest()) guestSmooth(dt);
+  else {
+    for (const e of G.enemies) updateEnemy(e, dt);
+    G.enemies = G.enemies.filter((e: any) => !(e.state === 'dead' && e.t > .9));
+    if (G.boss) { updateBoss(G.boss, dt); if (G.boss.state === 'dead' && G.boss.t > 2.4) G.boss = null; }
+  }
+  if (G.netMsg) { G.netMsg.t -= rdt; if (G.netMsg.t <= 0) G.netMsg = null; }
   updateProjs(dt);
   for (const p of G.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.g * dt; p.life -= dt; }
   G.parts = G.parts.filter((p: any) => p.life > 0);
@@ -97,7 +105,14 @@ export function renderWorld() {
     if (e.hp < e.maxhp && e.state !== 'dead') { R('#000', e.x - 9, e.y - e.h - 9, 18, 2); R('#a01822', e.x - 8.5, e.y - e.h - 8.5, 17 * e.hp / e.maxhp, 1); }
   }
   if (boss) drawCharAt(boss.def, boss.x, boss.y, boss.face, bossPose(boss), boss.B.scale, boss.alpha);
+  for (const r of NET.remotes.values()) {
+    const d = CHARS.find(c => c.id === r.c); if (!d) continue;
+    drawCharAt(d, r.x, r.y, r.f || 1, { ...(r.o || {}), seed: 5 }, 1, r.s === 'dead' ? .5 : 1);
+    txt(d.short, Math.round(r.x), Math.round(r.y) - 40, 8, '#9fd8ff', 'center');
+    if (r.mh) { R('#000', r.x - 10, r.y - 31, 20, 2); R('#3aa0e0', r.x - 9.5, r.y - 30.5, 19 * Math.max(0, r.hp) / r.mh, 1); }
+  }
   drawCharAt(P.d, P.x, P.y, P.face, playerPose());
+  if (online()) txt(P.d.short, Math.round(P.x), Math.round(P.y) - 40, 8, '#ffe0a0', 'center');
   if (P.critNext && Math.floor(G.time * 8) % 2) R('#ffe080', P.x - .5, P.y - 34, 1, 1);
   drawProjs();
   for (const p of G.parts) {
